@@ -1,0 +1,21 @@
+body {
+  margin: 0;
+  overflow: hidden;
+}
+
+#hud {
+  position: absolute;
+  z-index: 1000;
+}
+
+#playground {
+  overflow: hidden;
+  position: absolute;
+  z-index: 100;
+}
+
+#hiddenSpriteSheet {
+  position: absolute;
+  z-index: -1000;
+  display: none;
+}

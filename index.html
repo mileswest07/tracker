@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Average Tracker</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- <meta name="Keywords" content=""> -->
+<!-- <meta name="Description" content=""> -->
+<!-- <link rel="icon" href="/favicon.ico" type="image/x-icon"> -->
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body onresize="resize_canvas()">
+  <section id="hud">
+    
+  </section>
+  <svg id="playground" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+    <rect id="lock_template" x="0" y="0" rx="12.5" ry="12.5" width="120" height="120" stroke="black" stroke-width="4" fill="white" style="display:none;"></rect>
+    <circle id="goal_template" x="0" y="0" cx="60" cy="60" r="60" stroke="black" stroke-width="4" fill="white" style="display:none;"></circle>
+    <path id="key_template" d="M52.5 7.5 c 7.5 -7.5, 7.5 -7.5, 15 0 l 45 45 c 7.5 7.5, 7.5 7.5, 0 15 l -45 45 c -7.5 7.5, -7.5 7.5, -15 0 l -45 -45 c -7.5 -7.5, -7.5 -7.5, 0 -15 Z" stroke="black" stroke-width="4" fill="white" style="display:none;"></path>
+    <path id="unreq_template" d="M56.25 6.5 c 3.75 -6.5, 3.75 -6.5, 7.5 0 l 52.5 91 c 3.75 6.5, 3.75 6.5, -3.75 6.5 l -105 0 c -7.5 0, -7.5 0, -3.75 -6.5 Z" stroke="black" stroke-width="4" fill="white" style="display:none;"></path>
+  </svg>
+  <canvas id="background" width="500" height="500">Your browser won't support this app. Please try another browser.</canvas>
+  <section id="hiddenSpriteSheet">
+    <img src="images/util/m1_grid.png" id="grid" width="24" height="24">
+  </section>
+  
+  
+  
+  
+  
+  <script src="js/iconType.js" type="module"></script>
+  <script src="js/objColors.js" type="module"></script>
+  <script src="js/nodeType.js" type="module"></script>
+  <script src="js/pickupType.js" type="module"></script>
+  <script src="js/rawData.js" type="module"></script>
+  <script src="js/main.js" type="module"></script>
+  <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>  
+  <![endif]-->
+  
+  <script type="text/javascript">
+    function resize_canvas() {
+      let canvas = document.getElementById("background");
+      if (canvas.width !== window.innerWidth){
+        canvas.width = window.innerWidth;
+      }
+
+      if (canvas.height !== window.innerHeight){
+        canvas.height = window.innerHeight;
+      }
+
+      let context = canvas.getContext("2d");
+      let gridImage = document.getElementById("grid");
+      let pattern = context.createPattern(gridImage, "repeat");
+      context.rect(0, 0, window.innerWidth, window.innerHeight);
+      context.fillStyle = pattern;
+      context.fill();
+    };
+  </script>
+  
+  <script type="module">
+    import main from "./js/main.js";
+    
+    document.addEventListener("DOMContentLoaded", () => {
+      main.init();
+      
+      document.getElementById("background").onwheel = (event) => {
+        event.preventDefault();
+      };
+
+      document.getElementById("background").onmousewheel = (event) => {
+        event.preventDefault();
+      };
+      
+      //document.getElementById("playground").width = window.innerWidth;
+      //document.getElementById("playground").height = window.innerHeight;
+
+      resize_canvas();
+    });
+  </script>
+</body>
+
+</html> 
