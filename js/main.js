@@ -46,55 +46,43 @@ function navigateTree(predicate) {
 }
 
 function debugRecursion(node) {
-  console.log("Hello world #" + node.id);
+  console.log("Hello world #" + node.id + ": " + node.textFill);
 }
 
 function makeNode(currentNode) {
   let svgRoot = document.getElementById("playground");
   let shapeEnum = 0;
   let shapeObject = null;
+  let groupObject = document.createElementNS("http://www.w3.org/2000/svg", "g");
   
   switch(currentNode.type) {
     case 1: 
     case 2: 
     case 3: 
       shapeEnum = iconType.circle;
-      shapeObject = svgRoot.createElement("circle");
-      shapeObject.cx = 60;
-      shapeObject.cy = 60;
-      shapeObject.r = 60;
-      shapeObject.stroke = "black";
-      shapeObject.strokeWidth = 4;
+      shapeObject = goal_template.cloneNode(true);
+      groupObject.id = "goal" + currentNode.id;
       shapeObject.fill = "white"; // TODO: determine the coloration
       break;
     case 5: 
       shapeEnum = iconType.square;
-      shapeObject = svgRoot.createElement("rect");
-      shapeObject.rx = 12.5;
-      shapeObject.ry = 12.5;
-      shapeObject.width = 120;
-      shapeObject.height = 120;
-      shapeObject.stroke = "black";
-      shapeObject.strokeWidth = 4;
+      shapeObject = lock_template.cloneNode(true);
+      groupObject.id = "lock" + currentNode.id;
       shapeObject.fill = "white"; //TODO: determine the coloration
       break;
     case 8: 
     case 9: 
       shapeEnum = iconType.rhombus;
-      shapeObject = svgRoot.createElement("path");
-      shapeObject.d = "M52.5 7.5 c 7.5 -7.5, 7.5 -7.5, 15 0 l 45 45 c 7.5 7.5, 7.5 7.5, 0 15 l -45 45 c -7.5 7.5, -7.5 7.5, -15 0 l -45 -45 c -7.5 -7.5, -7.5 -7.5, 0 -15 Z";
-      shapeObject.stroke = "black";
-      shapeObject.strokeWidth = 4;
+      shapeObject = key_template.cloneNode(true);
+      groupObject.id = "key" + currentNode.id;
       shapeObject.fill = "white"; //TODO: determine the coloration
       break;
     case 4: 
     case 7: 
     case 10: 
       shapeEnum = iconType.wedge;
-      shapeObject = svgRoot.createElement("path");
-      shapeObject.d = "M56.25 14.5 c 3.75 -6.5, 3.75 -6.5, 7.5 0 l 52.5 91 c 3.75 6.5, 3.75 6.5, -3.75 6.5 l -105 0 c -7.5 0, -7.5 0, -3.75 -6.5 Z";
-      shapeObject.stroke = "black";
-      shapeObject.strokeWidth = 4;
+      shapeObject = unreq_template.cloneNode(true);
+      groupObject.id = "unreq" + currentNode.id;
       shapeObject.fill = "white"; //TODO: determine the coloration
       break;
     case 6: 
@@ -106,14 +94,41 @@ function makeNode(currentNode) {
       shapeEnum = iconType.none;
   }
   
-  svgRoot.appendChild(shapeObject);
+  shapeObject.removeAttribute("id");
+  shapeObject.removeAttribute("transform");
+  groupObject.appendChild(shapeObject);
+  
+  let textObject = null;
+  
+  if (currentNode.textFill.length > 0) {
+    textObject = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    textObject.classList.add("text-node");
+    textObject.setAttribute("x", "0");
+    textObject.setAttribute("y", "9");
+    textObject.setAttribute("fill", "black");
+    textObject.setAttribute("text-anchor", "middle");
+    textObject.innerHTML = currentNode.textFill;
+    groupObject.appendChild(textObject);
+  }
+  
+  if (currentNode.image.length > 0) {
+    // pull the right image from the repo
+  }
+  
+  if (currentNode.textFill.length > 0 && currentNode.image.length > 0) {
+    // do something to add both objects to the space
+  }
+  
+  groupObject.setAttribute("transform", "translate(720 144)");
+  
+  svgRoot.appendChild(groupObject);
 }
 
 function init() {
   makeTree();
   navigateTree(debugRecursion);
   
-  //makeNode(root);
+  makeNode(root);
 }
 
 export default {

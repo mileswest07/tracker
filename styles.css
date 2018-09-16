@@ -1,3 +1,7 @@
+* {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
 body {
   margin: 0;
   overflow: hidden;
@@ -12,6 +16,11 @@ body {
   overflow: hidden;
   position: absolute;
   z-index: 100;
+}
+
+#playground .text-node {
+  font-size: 24px;
+  font-weight: bold;
 }
 
 #hiddenSpriteSheet {
