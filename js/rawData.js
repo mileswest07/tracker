@@ -50,10 +50,10 @@ export default [
   }, {
     "id": 4,
     "type": 8,
-    "image": "",
+    "image": "morphBall",
     "screenshot": "",
     "parentId": 0,
-    "textFill": "Morph Ball get",
+    "textFill": "",
     "mapId": 1,
     "numReqd": 0,
     "canBeSBd": false,

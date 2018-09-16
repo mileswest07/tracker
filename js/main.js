@@ -45,48 +45,78 @@ function navigateTree(predicate) {
   recursionB(root, predicate);
 }
 
+function findNodeByProp(property, value) {
+  var returnNode = null;
+  
+  navigateTree(currentNode => {
+    if (currentNode[property] === value) {
+      returnNode = currentNode;
+    }
+  });
+  
+  return returnNode;
+}
+
 function debugRecursion(node) {
   console.log("Hello world #" + node.id + ": " + node.textFill);
 }
 
-function makeNode(currentNode) {
+function makeNode(currentNode, x, y) {
   let svgRoot = document.getElementById("playground");
   let shapeEnum = 0;
   let shapeObject = null;
   let groupObject = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  let imageClass = null;
+  let fillColor = "white";
+  
+  console.log(objColors);
+  console.log(pickupType);
+  console.log(currentNode.pickupType);
+  
+  if (currentNode.pickupType) {
+    console.log(pickupType[currentNode.pickupType]);
+    console.log(objColors[pickupType[currentNode.pickupType]]);
+  }
   
   switch(currentNode.type) {
-    case 1: 
-    case 2: 
     case 3: 
-      shapeEnum = iconType.circle;
+      fillColor = objColors.boss;
+      imageClass = "boss-image";
+    case 2: 
+      fillColor = objColors.elevator;
+    case 1: 
+      imageClass = imageClass.length > 0 ? imageClass : "lock-image";
       shapeObject = goal_template.cloneNode(true);
       groupObject.id = "goal" + currentNode.id;
-      shapeObject.fill = "white"; // TODO: determine the coloration
+      shapeObject.removeAttribute("fill");
+      shapeObject.setAttribute("fill", "white");
       break;
     case 5: 
-      shapeEnum = iconType.square;
       shapeObject = lock_template.cloneNode(true);
       groupObject.id = "lock" + currentNode.id;
-      shapeObject.fill = "white"; //TODO: determine the coloration
+      shapeObject.removeAttribute("fill");
+      shapeObject.setAttribute("fill", "#"+ objColors[pickupType[currentNode.pickupType]]);
+      imageClass = "lock-image";
       break;
     case 8: 
     case 9: 
-      shapeEnum = iconType.rhombus;
       shapeObject = key_template.cloneNode(true);
       groupObject.id = "key" + currentNode.id;
-      shapeObject.fill = "white"; //TODO: determine the coloration
+      shapeObject.removeAttribute("fill");
+      shapeObject.setAttribute("fill", "#"+ objColors[pickupType[currentNode.pickupType]]);
+      imageClass = "key-image";
       break;
     case 4: 
     case 7: 
     case 10: 
-      shapeEnum = iconType.wedge;
       shapeObject = unreq_template.cloneNode(true);
       groupObject.id = "unreq" + currentNode.id;
-      shapeObject.fill = "white"; //TODO: determine the coloration
+      shapeObject.removeAttribute("fill");
+      shapeObject.setAttribute("fill", "#"+ objColors[pickupType[currentNode.pickupType]]);
+      imageClass = "key-image";
       break;
     case 6: 
-      shapeEnum = iconType.arrow_up; // TODO: determine direction
+      // TODO: determine direction
       shapeObject = svgRoot.createElement("div");
       break;
     case 0: 
@@ -108,18 +138,30 @@ function makeNode(currentNode) {
     textObject.setAttribute("fill", "black");
     textObject.setAttribute("text-anchor", "middle");
     textObject.innerHTML = currentNode.textFill;
-    groupObject.appendChild(textObject);
   }
+  
+  let imageObject = null;
   
   if (currentNode.image.length > 0) {
     // pull the right image from the repo
+    imageObject = document.createElementNS("http://www.w3.org/2000/svg", "image");
+    imageObject.classList.add(imageClass);
+    imageObject.setAttribute("xlink:href", "images/icons/" + currentNode.image + ".png");
+    imageObject.setAttribute("width", "38");
+    imageObject.setAttribute("height", "38");
   }
   
-  if (currentNode.textFill.length > 0 && currentNode.image.length > 0) {
+  if (textObject && imageObject) {
     // do something to add both objects to the space
+  } else if (textObject) {
+    groupObject.appendChild(textObject);
+  } else if (imageObject) {
+    groupObject.appendChild(imageObject);
+  } else {
+    //something has gone wrong
   }
   
-  groupObject.setAttribute("transform", "translate(720 144)");
+  groupObject.setAttribute("transform", "translate(" + x + " "+ y + ")");
   
   svgRoot.appendChild(groupObject);
 }
@@ -128,7 +170,9 @@ function init() {
   makeTree();
   navigateTree(debugRecursion);
   
-  makeNode(root);
+  makeNode(root, 720, 144);
+  let testMorphBall = findNodeByProp("id", 4);
+  makeNode(testMorphBall, 720, 288);
 }
 
 export default {

@@ -24,7 +24,21 @@ body {
 }
 
 #hiddenSpriteSheet {
+  display: none;
   position: absolute;
   z-index: -1000;
-  display: none;
 }
+
+.lock-image {
+  -webkit-filter: grayscale(100%); /* Safari 6.0 - 9.0 */
+  filter: grayscale(100%);
+  mix-blend-mode: multiply;
+}
+
+.key-image {
+  -webkit-filter: grayscale(100%); /* Safari 6.0 - 9.0 */
+  filter: grayscale(100%);
+  mix-blend-mode: screen;
+}
+
+.boss-image { }
