@@ -15,32 +15,37 @@
     
   </section>
   <svg id="playground" width="100%" height="100%" viewBox="0 0 1440 720" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <defs>
-      <filter id="key_filter">
-        <feBlend in="SourceGraphic" in2="BackgroundImage" mode="screen"/>
-      </filter>
-      <filter id="lock_filter">
-        <feBlend in="SourceGraphic" in2="BackgroundImage" mode="multiply"/>
-      </filter>
-    </defs>
     Your browser won't support this app. Please try another browser.
-    <rect id="lock_template" class="lock-field" x="-60" y="-60" rx="12.5" ry="12.5" width="120" height="120" stroke="black" stroke-width="4" fill="white" transform="translate(144 144)"></rect>
-    <circle id="goal_template" class="goal-field" x="0" y="0" cx="0" cy="0" r="60" stroke="black" stroke-width="4" fill="white" transform="translate(144 288)"></circle>
-    <path id="key_template" class="key-field" d="M -7.5 -52.5 c 7.5 -7.5, 7.5 -7.5, 15 0 l 45 45 c 7.5 7.5, 7.5 7.5, 0 15 l -45 45 c -7.5 7.5, -7.5 7.5, -15 0 l -45 -45 c -7.5 -7.5, -7.5 -7.5, 0 -15 Z" stroke="black" stroke-width="4" fill="white" transform="translate(144 432)"></path>
-    <path id="unreq_template" class="unreq-field" d="M -3.75 -53.5 c 3.75 -6.5, 3.75 -6.5, 7.5 0 l 52.5 91 c 3.75 6.5, 3.75 6.5, -3.75 6.5 l -105 0 c -7.5 0, -7.5 0, -3.75 -6.5 Z" stroke="black" stroke-width="4" fill="white" transform="translate(144 576)"></path>
-    <path id="arrow_up_template" class="arrow-up-field" d="M -5 15 l 0 -15 l -10 0 l 15 -15 l 15 15 l -10 0 l 0 15" stroke="black" stroke-width="3" fill="white" transform="translate(288 144)"></path>
-    <path id="arrow_down_template" class="arrow-down-field" d="M -5 -15 l 0 15 l -10 0 l 15 15 l 15 -15 l -10 0 l 0 -15" stroke="black" stroke-width="3" fill="white" transform="translate(288 288)"></path>
-    <path id="arrow_right_template" class="arrow-right-field" d="M -15 -5 l 15 0 l 0 -10 l 15 15 l -15 15 l 0 -10 l -15 0" stroke="black" stroke-width="3" fill="white" transform="translate(288 432)"></path>
-    <path id="arrow_left_template" class="arrow-left-field" d="M 15 -5 l -15 0 l 0 -10 l -15 15 l 15 15 l 0 -10 l 15 0" stroke="black" stroke-width="3" fill="white" transform="translate(288 576)"></path>
-    <circle id="junction_template" class="junction" x="0" y="0" cx="0" cy="0" r="15" stroke="black" stroke-width="3" fill="white" transform="translate(432 144)"></circle>
-    <path id="grid_line_h_left_template" class="path-left" d="M -72 -5 h 72 m 0 10 h -72" stroke="black" stroke-width="3" stroke-linecap="butt" fill="white" transform="translate(576 144)"></path>
-    <path id="grid_line_h_right_template" class="path-right" d="M 0 -5 h 72 m 0 10 h -72" stroke="black" stroke-width="3" stroke-linecap="butt" fill="white" transform="translate(576 144)"></path>
-    <path id="grid_line_v_up_template" class="path-up" d="M -5 -72 v 72 m 10 0 v -72" stroke="black" stroke-width="3" stroke-linecap="butt" fill="white" transform="translate(576 144)"></path>
-    <path id="grid_line_v_down_template" class="path-down" d="M -5 0 v 72 m 10 0 v -72" stroke="black" stroke-width="3" stroke-linecap="butt" fill="white" transform="translate(576 144)"></path>
-    <path class="path-up" d="M -5 -72 v 72 m 10 0 v -72" stroke="black" stroke-width="3" stroke-linecap="butt" fill="white" transform="translate(576 288)"></path>
-    <path class="path-left" d="M -72 -5 h 72 m 0 10 h -72" stroke="black" stroke-width="3" stroke-linecap="butt" fill="white" transform="translate(576 288)"></path>
-    <path class="path-right" d="M 0 -5 h 72 m 0 10 h -72" stroke="black" stroke-width="3" stroke-linecap="butt" fill="white" transform="translate(576 288)"></path>
-    <path class="path-down" d="M -5 0 v 72 m 10 0 v -72" stroke="black" stroke-width="3" stroke-linecap="butt" fill="white" transform="translate(576 288)"></path>
+    <g id="templatesArea" style="display:none;">
+      <rect id="lock_template" class="lock-field" x="-60" y="-60" rx="12.5" ry="12.5" width="120" height="120" stroke="black" stroke-width="4"></rect>
+      <circle id="goal_template" class="goal-field" x="0" y="0" cx="0" cy="0" r="60" stroke="black" stroke-width="4"></circle>
+      <path id="key_template" class="key-field" d="M -7.5 -52.5 c 7.5 -7.5, 7.5 -7.5, 15 0 l 45 45 c 7.5 7.5, 7.5 7.5, 0 15 l -45 45 c -7.5 7.5, -7.5 7.5, -15 0 l -45 -45 c -7.5 -7.5, -7.5 -7.5, 0 -15 Z" stroke="black" stroke-width="4"></path>
+      <path id="unreq_template" class="unreq-field" d="M -3.75 -53.5 c 3.75 -6.5, 3.75 -6.5, 7.5 0 l 52.5 91 c 3.75 6.5, 3.75 6.5, -3.75 6.5 l -105 0 c -7.5 0, -7.5 0, -3.75 -6.5 Z" stroke="black" stroke-width="4"></path>
+      <path id="arrow_up_template" class="arrow-up-field" d="M -5 15 l 0 -15 l -10 0 l 15 -15 l 15 15 l -10 0 l 0 15" stroke="black" stroke-width="3" fill="white"></path>
+      <path id="arrow_down_template" class="arrow-down-field" d="M -5 -15 l 0 15 l -10 0 l 15 15 l 15 -15 l -10 0 l 0 -15" stroke="black" stroke-width="3" fill="white"></path>
+      <path id="arrow_right_template" class="arrow-right-field" d="M -15 -5 l 15 0 l 0 -10 l 15 15 l -15 15 l 0 -10 l -15 0" stroke="black" stroke-width="3" fill="white"></path>
+      <path id="arrow_left_template" class="arrow-left-field" d="M 15 -5 l -15 0 l 0 -10 l -15 15 l 15 15 l 0 -10 l 15 0" stroke="black" stroke-width="3" fill="white"></path>
+      <circle id="junction_template" class="junction" x="0" y="0" cx="0" cy="0" r="15" stroke="black" stroke-width="3" fill="white"></circle>
+      <g id="grid_line_h_left_template" class="path-left">
+        <rect x="-72" y="-5" width="72" height="10" fill="white"></rect>
+        <path d="M -72 -5 h 72 m 0 10 h -72 m 0 -10" stroke="black" stroke-width="3" stroke-linecap="butt"></path>
+      </g>
+      <g id="grid_line_h_right_template" class="path-right">
+        <rect x="0" y="-5" width="72" height="10" fill="white"></rect>
+        <path d="M 0 -5 h 72 m 0 10 h -72 m 0 -10" stroke="black" stroke-width="3" stroke-linecap="butt"></path>
+      </g>
+      <g id="grid_line_v_up_template" class="path-up">
+        <rect x="-5" y="-72" width="10" height="72" fill="white"></rect>
+        <path d="M -5 -72 v 72 m 10 0 v -72 m -10 0" stroke="black" stroke-width="3" stroke-linecap="butt"></path>
+      </g>
+      <g id="grid_line_v_down_template" class="path-down">
+        <rect x="-5" y="0" width="10" height="72" fill="white"></rect>
+        <path d="M -5 0 v 72 m 10 0 v -72 m -10 0" stroke="black" stroke-width="3" stroke-linecap="butt"></path>
+      </g>
+    </g>
+    <g id="gridPaths"></g>
+    <g id="junctions"></g>
+    <g id="mainMeat"></g>
   </svg>
   <canvas id="background" width="500" height="500">Your browser won't support this app. Please try another browser.</canvas>
   <section id="hiddenSpriteSheet">

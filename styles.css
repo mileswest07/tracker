@@ -42,3 +42,43 @@ body {
 }
 
 .boss-image { }
+
+#lock_template {
+  display: none;
+}
+#key_template {
+  display: none;
+}
+#goal_template {
+  display: none;
+}
+#unreq_template {
+  display: none;
+}
+#junction_template {
+  display: none;
+}
+#arrow_up_template {
+  display: none;
+}
+#arrow_down_template {
+  display: none;
+}
+#arrow_left_template {
+  display: none;
+}
+#arrow_right_template {
+  display: none;
+}
+#grid_line_h_left_template {
+  display: none;
+}
+#grid_line_h_right_template {
+  display: none;
+}
+#grid_line_v_up_template {
+  display: none;
+}
+#grid_line_v_down_template {
+  display: none;
+}

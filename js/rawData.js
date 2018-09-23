@@ -14,7 +14,7 @@ export default [
   }, {
     "id": 1,
     "type": 5,
-    "image": "",
+    "image": "morphBall",
     "screenshot": "",
     "parentId": 0,
     "textFill": "first tunnel",
@@ -26,7 +26,7 @@ export default [
   }, {
     "id": 2,
     "type": 5,
-    "image": "",
+    "image": "iceBeam",
     "screenshot": "",
     "parentId": 0,
     "textFill": "ice platform",
@@ -38,7 +38,7 @@ export default [
   }, {
     "id": 3,
     "type": 5,
-    "image": "",
+    "image": "bomb",
     "screenshot": "",
     "parentId": 0,
     "textFill": "kraid access",
@@ -53,7 +53,7 @@ export default [
     "image": "morphBall",
     "screenshot": "",
     "parentId": 0,
-    "textFill": "",
+    "textFill": "Morph Ball get",
     "mapId": 1,
     "numReqd": 0,
     "canBeSBd": false,
@@ -62,7 +62,7 @@ export default [
   }, {
     "id": 5,
     "type": 7,
-    "image": "",
+    "image": "energyTank",
     "screenshot": "",
     "parentId": 2,
     "textFill": "ceiling Energy Tank",
@@ -86,7 +86,7 @@ export default [
   }, {
     "id": 7,
     "type": 5,
-    "image": "",
+    "image": "missile",
     "screenshot": "",
     "parentId": 1,
     "textFill": "Tourian door",
@@ -98,7 +98,7 @@ export default [
   }, {
     "id": 8,
     "type": 5,
-    "image": "",
+    "image": "missile",
     "screenshot": "",
     "parentId": 1,
     "textFill": "Long Beam door",
@@ -110,7 +110,7 @@ export default [
   }, {
     "id": 9,
     "type": 5,
-    "image": "",
+    "image": "bomb",
     "screenshot": "",
     "parentId": 1,
     "textFill": "floor tunnel",
@@ -122,7 +122,7 @@ export default [
   }, {
     "id": 10,
     "type": 5,
-    "image": "",
+    "image": "bomb",
     "screenshot": "",
     "parentId": 1,
     "textFill": "upper tunnel",
@@ -134,7 +134,7 @@ export default [
   }, {
     "id": 11,
     "type": 7,
-    "image": "",
+    "image": "energyTank",
     "screenshot": "",
     "parentId": 1,
     "textFill": "first Energy Tank",
@@ -170,7 +170,7 @@ export default [
   }, {
     "id": 14,
     "type": 7,
-    "image": "",
+    "image": "longBeam",
     "screenshot": "",
     "parentId": 8,
     "textFill": "Long Beam get",
@@ -182,7 +182,7 @@ export default [
   }, {
     "id": 15,
     "type": 5,
-    "image": "",
+    "image": "missile",
     "screenshot": "",
     "parentId": 9,
     "textFill": "missile door",
@@ -194,7 +194,7 @@ export default [
   }, {
     "id": 16,
     "type": 5,
-    "image": "",
+    "image": "highJump",
     "screenshot": "",
     "parentId": 10,
     "textFill": "Varia High leap",
@@ -206,7 +206,7 @@ export default [
   }, {
     "id": 17,
     "type": 5,
-    "image": "",
+    "image": "missile",
     "screenshot": "",
     "parentId": 16,
     "textFill": "Varia door",
@@ -218,7 +218,7 @@ export default [
   }, {
     "id": 18,
     "type": 7,
-    "image": "",
+    "image": "varia",
     "screenshot": "",
     "parentId": 17,
     "textFill": "Varia Suit get",
@@ -230,7 +230,7 @@ export default [
   }, {
     "id": 19,
     "type": 7,
-    "image": "",
+    "image": "missile",
     "screenshot": "",
     "parentId": 10,
     "textFill": "upper missile tank",
@@ -242,7 +242,7 @@ export default [
   }, {
     "id": 20,
     "type": 5,
-    "image": "",
+    "image": "bomb",
     "screenshot": "",
     "parentId": 19,
     "textFill": "hidden wall",
@@ -254,7 +254,7 @@ export default [
   }, {
     "id": 21,
     "type": 7,
-    "image": "",
+    "image": "energyTank",
     "screenshot": "",
     "parentId": 20,
     "textFill": "upper level Energy Tank",
@@ -266,7 +266,7 @@ export default [
   }, {
     "id": 22,
     "type": 8,
-    "image": "",
+    "image": "missile",
     "screenshot": "",
     "parentId": 1,
     "textFill": "first Missile Tank",
@@ -314,7 +314,7 @@ export default [
   }, {
     "id": 26,
     "type": 5,
-    "image": "",
+    "image": "missile",
     "screenshot": "",
     "parentId": 11,
     "textFill": "Bomb door",
@@ -326,7 +326,7 @@ export default [
   }, {
     "id": 27,
     "type": 8,
-    "image": "",
+    "image": "bomb",
     "screenshot": "",
     "parentId": 26,
     "textFill": "Bombs",
@@ -338,7 +338,7 @@ export default [
   }, {
     "id": 28,
     "type": 7,
-    "image": "",
+    "image": "iceBeam",
     "screenshot": "",
     "parentId": 15,
     "textFill": "Ice Beam no1",
@@ -362,7 +362,7 @@ export default [
   }, {
     "id": 30,
     "type": 5,
-    "image": "",
+    "image": "iceBeam",
     "screenshot": "",
     "parentId": 25,
     "textFill": "freeze Rippers",
@@ -374,7 +374,7 @@ export default [
   }, {
     "id": 31,
     "type": 5,
-    "image": "",
+    "image": "highJump",
     "screenshot": "",
     "parentId": 30,
     "textFill": "high jump needed",
