@@ -41,11 +41,12 @@ let main = {};
   function makeTree() {
     mapRoots = workingData.filter(node => node.type === nodeType.start);
     root = mapRoots[0];
-    currentMap = 1;
     
-    let mapNodes = {};
-    let currentNode = root;
-    recursionA(currentNode, mapNodes);
+    for (let i = 0; i < mapRoots.length; i++) {
+      let mapNodes = {};
+      let currentNode = mapRoots[i];
+      recursionA(currentNode, mapNodes);
+    }
   }
 
   function recursionB(currentNode, predicate) {
@@ -57,7 +58,15 @@ let main = {};
   }
 
   function navigateTree(predicate) {
-    recursionB(root, predicate);
+    let currentRoot = 0;
+    for (let i = 0; i < mapRoots.length; i++) {
+      if (mapRoots[i].mapId === currentMap) {
+        currentRoot = mapRoots[i];
+        break;
+      }
+    }
+    
+    recursionB(currentRoot, predicate);
   }
 
   function findNodeByProp(property, value) {
@@ -278,6 +287,9 @@ let main = {};
         insertPathLine("d", getCursor().x, getCursor().y);
         insertPathLine("u", getCursor().x, (getCursor().y + 144));
         escapeArrow.setAttribute("transform", "translate(" + getCursor().x + " "+ (getCursor().y + 144) + ")");
+        shiftCursor(0, 1);
+        expandViewbox();
+        shiftCursor(0, -1);
       }
       mainMeat.appendChild(escapeArrow);
     }
@@ -337,20 +349,40 @@ let main = {};
   }
 
   function hoverElevator(e) {
-    console.log("elevator was hovered!");
+    //console.log("elevator was hovered!");
   }
 
   function clickElevator(e) {
-    console.log("elevator was clicked!", e);
+    //console.log("elevator was clicked!", e);
     let parent = e.target.parentElement;
-    console.log(parent);
     let str = parent.id;
     let pattern = /\d+/g;
     let result = str.match(pattern);
     result = parseInt(result[0]);
     let retrievedNode = findNodeByProp("id", result);
-    console.log(retrievedNode);
-    console.log(retrievedNode.pointsToElevatorId);
+    let nextRoot = workingData.find(entry => entry.id === retrievedNode.pointsToElevatorId);
+    console.log("would open map to", areaData[nextRoot.mapId].name);
+    // transition out current map
+    // if map is brand new
+    //   build new map
+    /*
+    let newPlayground = playground.cloneNode(true);
+    playground.style = "display:hidden;";
+    newPlayground.removeAttribute("id");
+    // create new svg and canvas?
+    */
+    //   build new tree
+    /*
+    currentMap = nextRoot.mapId;
+    init();
+    */
+    //   display root
+    /*
+    moveCursor(0, 0);
+    makeNode(nextRoot);
+    */
+    // else
+    //   transition in next map
   }
 
   function centerCursorOnElement(elementId) {
@@ -819,14 +851,33 @@ let main = {};
   function doNothing() {
     //console.log("nothing doing");
   }
+  
+  function resize_canvas() {
+    let canvas = document.getElementById("background");
+    if (canvas.width !== window.innerWidth){
+      canvas.width = window.innerWidth;
+    }
+
+    if (canvas.height !== window.innerHeight){
+      canvas.height = window.innerHeight;
+    }
+
+    let context = canvas.getContext("2d");
+    let gridImage = document.getElementById("grid");
+    let pattern = context.createPattern(gridImage, "repeat");
+    context.rect(0, 0, window.innerWidth, window.innerHeight);
+    context.fillStyle = pattern;
+    context.fill();
+  };
 
   function init() {
     makeTree();
-    navigateTree(debugRecursion);
+    //navigateTree(debugRecursion);
     
     moveCursor(0, 0);
-    makeNode(root);
+    makeNode(mapRoots[(currentMap - 1)]);
   }
 
   main.init = init;
+  main.resize_canvas = resize_canvas;
 })();
