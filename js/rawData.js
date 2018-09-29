@@ -82,7 +82,7 @@ const rawData = [
     "numReqd": 0,
     "canBeSBd": false,
     "pickupType": 0,
-    "pointsToElevatorId": "__________________________"
+    "pointsToElevatorId": 32
   }, {
     "id": 7,
     "type": 5,
@@ -383,6 +383,18 @@ const rawData = [
     "canBeSBd": false,
     "pickupType": 8,
     "pointsToElevatorId": -1
+  }, {
+    "id": 32,
+    "type": 1,
+    "image": "",
+    "screenshot": "",
+    "parentId": -1,
+    "textFill": "BRINSTAR",
+    "mapId": 2,
+    "numReqd": 0,
+    "canBeSBd": false,
+    "pickupType": 0,
+    "pointsToElevatorId": 6
   }
 ];
 

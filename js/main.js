@@ -3,6 +3,8 @@ let main = {};
 (function() {
   let root = null;
   let workingData = rawData;
+  let mapRoots = [];
+  let currentMap = 1;
 
   let cursor = {
     x: 0,
@@ -37,7 +39,9 @@ let main = {};
   }
 
   function makeTree() {
-    root = workingData.find(node => node.type === nodeType.start)
+    mapRoots = workingData.filter(node => node.type === nodeType.start);
+    root = mapRoots[0];
+    currentMap = 1;
     
     let mapNodes = {};
     let currentNode = root;
@@ -186,6 +190,8 @@ let main = {};
         clickCapture = clickRoot;
         break;
       case 2:
+        hoverCapture = hoverElevator;
+        clickCapture = clickElevator;
         break;
       case 3:
         break;
@@ -330,6 +336,23 @@ let main = {};
     //console.log("root was hovered!");
   }
 
+  function hoverElevator(e) {
+    console.log("elevator was hovered!");
+  }
+
+  function clickElevator(e) {
+    console.log("elevator was clicked!", e);
+    let parent = e.target.parentElement;
+    console.log(parent);
+    let str = parent.id;
+    let pattern = /\d+/g;
+    let result = str.match(pattern);
+    result = parseInt(result[0]);
+    let retrievedNode = findNodeByProp("id", result);
+    console.log(retrievedNode);
+    console.log(retrievedNode.pointsToElevatorId);
+  }
+
   function centerCursorOnElement(elementId) {
     let coords = getCurrentCoordsOfNodeById(elementId);
     moveCursor(((coords[0] / 144) - 1), ((coords[1] / 144) - 1));
@@ -345,7 +368,7 @@ let main = {};
     } else {
       shapeObject.setAttribute("transform", "translate(" + getCursor().x + " " + getCursor().y + ")");
     }
-    //shapeObject.setAttribute("fill", "#"+ areaData[root.mapId].color);
+    //shapeObject.setAttribute("fill", "#"+ areaData[mapRoots[(currentMap - 1)].mapId].color);
     
     junctions.appendChild(shapeObject);
   }
@@ -376,7 +399,7 @@ let main = {};
     } else {
       copy.setAttribute("transform", "translate(" + getCursor().x + " " + getCursor().y + ")");
     }
-    //copy.children[0].setAttribute("fill", "#"+ areaData[root.mapId].color);
+    //copy.children[0].setAttribute("fill", "#"+ areaData[mapRoots[(currentMap - 1)].mapId].color);
     
     gridPaths.appendChild(copy);
   }
@@ -416,7 +439,7 @@ let main = {};
   }
 
   function ancestorsMakeRoom(elementId, node, accumulator) {
-    if (node.id === root.id) {
+    if (node.id === mapRoots[(node.mapId - 1)].id) {
       return;
     }
     
