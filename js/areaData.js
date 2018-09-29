@@ -7,7 +7,7 @@ export default [
   {
     "id": 1,
     "name": "Brinstar",
-    "color": "ffffff"
+    "color": "2038ec"
   },
   {
     "id": 2,
