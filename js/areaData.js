@@ -1,4 +1,4 @@
-export default [
+const areaData = [
   {
     "id": 0,
     "name": "",

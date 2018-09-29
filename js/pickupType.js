@@ -1,4 +1,4 @@
-export default [
+const pickupType = [
   "na",
   "MorphBall",
   "LongBeam",

@@ -1,4 +1,4 @@
-export default {
+const objColors = {
   "na": "ffffff",
   "MorphBall": "fc9838",
   "LongBeam": "bca470",

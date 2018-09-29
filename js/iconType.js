@@ -1,4 +1,4 @@
-export default {
+const iconType = {
   "none": 0,
   "circle": 1,
   "square": 2,

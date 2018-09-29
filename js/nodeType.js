@@ -1,4 +1,4 @@
-export default {
+const nodeType = {
   "none": 0,
   "start": 1,
   "elevator": 2,
