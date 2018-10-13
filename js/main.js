@@ -244,8 +244,7 @@ let main = {};
       // pull the right image from the repo
       imageObject = document.createElementNS("http://www.w3.org/2000/svg", "image");
       imageObject.classList.add(imageClass);
-      imageObject.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
-      imageObject.setAttribute("xlink:href", "images/icons/" + currentNode.image + ".png");
+      imageObject.setAttributeNS("http://www.w3.org/1999/xlink", "href", "images/icons/" + currentNode.image + ".png");
       imageObject.setAttribute("width", "80px");
       imageObject.setAttribute("height", "80px");
       imageObject.setAttribute("x", "-40");
