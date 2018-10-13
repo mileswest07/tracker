@@ -146,7 +146,7 @@ const rawData = [
   }, {
     "id": 12,
     "type": 5,
-    "image": "",
+    "image": "kraid",
     "screenshot": "",
     "parentId": 7,
     "textFill": "",
@@ -158,7 +158,7 @@ const rawData = [
   }, {
     "id": 13,
     "type": 5,
-    "image": "",
+    "image": "ridley",
     "screenshot": "",
     "parentId": 12,
     "textFill": "",
@@ -725,7 +725,7 @@ const rawData = [
     "image": "iceBeamB",
     "screenshot": "",
     "parentId": [54, 59],
-    "textFill": "",
+    "textFill": "Ice Beam #2",
     "mapId": 2,
     "numReqd": 0,
     "canBeSBd": false,

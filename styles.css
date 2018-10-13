@@ -18,9 +18,14 @@ body {
   z-index: 100;
 }
 
-#playground .text-node {
+.text-node {
   font-size: 24px;
   font-weight: bold;
+  text-transform: uppercase;
+}
+
+.key-field ~ .text-node {
+  color: white;
 }
 
 #hiddenSpriteSheet {

@@ -188,7 +188,6 @@ let main = {};
         break;
     }
     
-    shapeObject.removeAttribute("fill");
     shapeObject.setAttribute("fill", fillColor);
     
     switch(currentNode.type) {
@@ -223,7 +222,6 @@ let main = {};
     }
     
     shapeObject.removeAttribute("id");
-    shapeObject.removeAttribute("transform");
     groupObject.appendChild(shapeObject);
     
     let textObject = null;
@@ -251,9 +249,20 @@ let main = {};
       imageObject.setAttribute("y", "-40");
     }
     
-    /* if (textObject && imageObject) {
-      // do something to add both objects to the space
-    } else */ if (imageObject) {
+    if (textObject && imageObject) {
+      if ([7, 8].includes(currentNode.type)) { // for keys
+        textObject.setAttribute("fill", "white");
+      } else {
+        textObject.setAttribute("fill", "black");
+      }
+      if (currentNode.children.length === 0 && !(currentNode.parentId.length > 1)) {
+        textObject.setAttribute("y", "81");
+      } else {
+        textObject.setAttribute("y", "29");
+      }
+      groupObject.appendChild(imageObject);
+      groupObject.appendChild(textObject);
+    } else if (imageObject) {
       groupObject.appendChild(imageObject);
     } else if (textObject) {
       groupObject.appendChild(textObject);
@@ -271,27 +280,50 @@ let main = {};
     groupObject.addEventListener("mouseleave", removeHover);
     groupObject.addEventListener("click", clickCapture);
     
-    mainMeat.appendChild(groupObject);
-    
     if (currentNode.type === 2 && currentNode.parent !== -1) {
       let escapeArrow = arrow_down_template.cloneNode(true);
       escapeArrow.removeAttribute("id");
-      //escapeArrow.removeAttribute("fill");
-      //escapeArrow.setAttribute("fill", "#"+ areaData[currentNode.mapId].color);
+      let arrowFill;
+      let destination = workingData.find(n => n.id === currentNode.pointsToElevatorId);
+      if (destination !== undefined) {
+        arrowFill = areaData[destination.mapId].color;
+      } else {
+        arrowFill = areaData[currentNode.mapId].color;
+      }
+      //escapeArrow.setAttribute("fill", "#"+ arrowFill);
+      let lastLine;
       if (x && y) {
         insertPathLine("d", x, y);
-        insertPathLine("u", x, (y + 144));
-        escapeArrow.setAttribute("transform", "translate(" + x + " "+ (y + 144) + ")");
+        lastLine = insertPathLine("u", x, (y + 144));
       } else {
         insertPathLine("d", getCursor().x, getCursor().y);
-        insertPathLine("u", getCursor().x, (getCursor().y + 144));
-        escapeArrow.setAttribute("transform", "translate(" + getCursor().x + " "+ (getCursor().y + 144) + ")");
-        shiftCursor(0, 1);
-        expandViewbox();
-        shiftCursor(0, -1);
+        lastLine = insertPathLine("u", getCursor().x, (getCursor().y + 144));
       }
-      mainMeat.appendChild(escapeArrow);
+      escapeArrow.setAttribute("transform", "translate(0 144)");
+      // color last line according to new map color
+      
+      let newGradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
+      let numGradsAlready = playground.children[0].children.length;
+      newGradient.setAttribute("id", "Gradient" + (numGradsAlready + 1))
+      newGradient.setAttribute("x1", 0);
+      newGradient.setAttribute("x2", 0);
+      newGradient.setAttribute("y1", 0);
+      newGradient.setAttribute("y2", 1);
+      let stop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+      stop1.setAttribute("offset", "0%");
+      stop1.setAttribute("stop-color", "#"+ areaData[root.mapId].color);
+      let stop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+      stop2.setAttribute("offset", "100%");
+      stop2.setAttribute("stop-color", "#"+ arrowFill);
+      newGradient.appendChild(stop1);
+      newGradient.appendChild(stop2);
+      playground.children[0].appendChild(newGradient);
+      //lastLine.children[0].setAttribute("fill", "url(#" + newGradient.id + ")")
+      groupObject.appendChild(escapeArrow);
     }
+    
+    mainMeat.appendChild(groupObject);
+    expandViewbox();
     
     return document.getElementById(groupObject.id);
   }
@@ -324,14 +356,12 @@ let main = {};
 
   function moveNode(elementId, x, y) {
     let nodeObj = document.getElementById(elementId);
-    nodeObj.removeAttribute("transform");
     nodeObj.setAttribute("transform", "translate(" + ((x + 1) * 144) + " " + ((y + 1) * 144) + ")");
   }
 
   function shiftNode(elementId, dx, dy) {
     let nodeObj = document.getElementById(elementId);
     let coords = getCurrentCoordsOfNodeById(elementId);
-    nodeObj.removeAttribute("transform");
     nodeObj.setAttribute("transform", "translate(" + (coords[0] + (dx * 144)) + " " + (coords[1] + (dy * 144)) + ")");
   }
 
@@ -360,6 +390,10 @@ let main = {};
     result = parseInt(result[0]);
     let retrievedNode = findNodeByProp("id", result);
     let nextRoot = workingData.find(entry => entry.id === retrievedNode.pointsToElevatorId);
+    if (nextRoot === undefined) {
+      console.log("Next map not implemented");
+      return;
+    }
     console.log("would open map to", areaData[nextRoot.mapId].name);
     // transition out current map
     // if map is brand new
@@ -392,8 +426,6 @@ let main = {};
   function insertJunctionDot(x, y) {
     let shapeObject = junction_template.cloneNode(true);
     shapeObject.removeAttribute("id");
-    shapeObject.removeAttribute("transform");
-    //shapeObject.removeAttribute("fill");
     if (x && y) {
       shapeObject.setAttribute("transform", "translate(" + x + " " + y + ")");
     } else {
@@ -402,6 +434,9 @@ let main = {};
     //shapeObject.setAttribute("fill", "#"+ areaData[mapRoots[(currentMap - 1)].mapId].color);
     
     junctions.appendChild(shapeObject);
+    
+    // retrieve currently-just-added element
+    //return document.getElement();
   }
 
   function insertPathLine(dir, x, y) {
@@ -423,8 +458,6 @@ let main = {};
     let original = document.getElementById(templateName);
     let copy = original.cloneNode(true);
     copy.removeAttribute("id");
-    copy.removeAttribute("transform");
-    //copy.children[0].removeAttribute("fill");
     if (x && y) {
       copy.setAttribute("transform", "translate(" + x + " " + y + ")");
     } else {
@@ -433,6 +466,15 @@ let main = {};
     //copy.children[0].setAttribute("fill", "#"+ areaData[mapRoots[(currentMap - 1)].mapId].color);
     
     gridPaths.appendChild(copy);
+    
+    // retrieve currently-just-added element
+    let thisLine;
+    if (x && y) {
+      thisLine = findElementOfLayerAtCoords("grid", x, y);
+    } else {
+      thisLine = findElementOfLayerAtCoords("grid", getCursor().x, getCursor().y);
+    }
+    return thisLine[thisLine.length - 1];
   }
 
   function findElementOfLayerAtCoords(layer, x, y) {
@@ -506,7 +548,6 @@ let main = {};
       childCoords.push(parseInt(result[0]));
       childCoords.push(parseInt(result[1]));
       moveCursor(((childCoords[0] / 144) - 1), ((childCoords[1] / 144) - 1));
-      moveThis.removeAttribute("transform");
       moveThis.setAttribute("transform", "translate(" + (childCoords[0] + (accumulator.val * 144)) + " " + childCoords[1] + ")");
       shiftCursor(accumulator.val, 0);
       expandViewbox();
@@ -851,7 +892,7 @@ let main = {};
     //console.log("nothing doing");
   }
   
-  function resize_canvas() {
+  function resizeCanvas() {
     let canvas = document.getElementById("background");
     if (canvas.width !== window.innerWidth){
       canvas.width = window.innerWidth;
@@ -878,5 +919,5 @@ let main = {};
   }
 
   main.init = init;
-  main.resize_canvas = resize_canvas;
+  main.resizeCanvas = resizeCanvas;
 })();

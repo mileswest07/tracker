@@ -10,12 +10,13 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 
-<body onresize="resize_canvas()">
+<body onresize="main.resizeCanvas()">
   <section id="hud">
     
   </section>
-  <svg id="playground" width="100%" height="100%" viewBox="0 0 1440 720" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <svg id="playground" width="100%" height="100%" viewBox="0 0 432 432" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
     Your browser won't support this app. Please try another browser.
+    <defs></defs>
     <g id="templatesArea" style="display:none;">
       <rect id="lock_template" class="lock-field" x="-60" y="-60" rx="12.5" ry="12.5" width="120" height="120" stroke="black" stroke-width="4"></rect>
       <circle id="goal_template" class="goal-field" x="0" y="0" cx="0" cy="0" r="60" stroke="black" stroke-width="4"></circle>
@@ -76,15 +77,17 @@
     document.addEventListener("DOMContentLoaded", () => {
       main.init();
       
-      document.getElementById("background").onwheel = (event) => {
-        event.preventDefault();
+      document.getElementById("background").onwheel = (e) => {
+        e.preventDefault();
+        console.log("did wheel", e);
       };
 
-      document.getElementById("background").onmousewheel = (event) => {
-        event.preventDefault();
+      document.getElementById("background").onmousewheel = (e) => {
+        e.preventDefault();
+        console.log("did mouse wheel", e);
       };
 
-      main.resize_canvas();
+      main.resizeCanvas();
     });
   </script>
 </body>
