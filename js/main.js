@@ -5,6 +5,8 @@ let main = {};
   let workingData = rawData;
   let mapRoots = [];
   let currentMap = 1;
+  let numMapsReady = 2;
+  let digitPattern = /\d+/g;
 
   let cursor = {
     x: 0,
@@ -14,7 +16,7 @@ let main = {};
   let mapVines = [];
 
   function listConnections(currentNode) {
-    return workingData.filter(node => ((node.parentId === currentNode.id) || (node.parentId.length && node.parentId.find(input => input === currentNode.id) !== undefined)));
+    return workingData.filter(node => node.parentId === currentNode.id);
   }
 
   function recursionA(currentNode, mapNodes) {
@@ -28,9 +30,35 @@ let main = {};
       }
       candidates[i].parents.push(currentNode);
       
-      if (mapNodes[candidates[i].id] === true) {
-        mapVines.push([candidates[i].id, currentNode.id]);
-      } else {
+      if (candidates[i].cousinsTo && Array.isArray(candidates[i].cousinsTo) && candidates[i].cousinsTo.length > 0) {
+        if (!(mapVines[currentMap - 1] && Array.isArray(mapVines[currentMap - 1]) && mapVines[currentMap - 1].length > 0)) {
+          mapVines[currentMap - 1] = [];
+        }
+        let newArray = [candidates[i].id].concat(candidates[i].cousinsTo);
+        let newerArray = newArray.sort();
+        
+        let notFound = true;
+        for (let j = 0; j < mapVines[currentMap - 1].length; j++) {
+          let cluster = mapVines[currentMap - 1][j];
+          if (cluster.length !== newerArray.length) {
+            continue;
+          }
+          let lengthMatches = 0;
+          for (let k = 0; k < cluster.length; k++) {
+            if (cluster[k] === newerArray[k]) {
+              lengthMatches++;
+            }
+          }
+          if (lengthMatches === newerArray.length) {
+            notFound = false;
+          }
+        }
+        if (notFound) {
+          mapVines[currentMap - 1].push(newerArray);
+        }
+      }
+      
+      if (mapNodes[candidates[i].id] !== true) {
         currentNode.children.push(candidates[i]);
         mapNodes[candidates[i].id] = true;
         recursionA(candidates[i], mapNodes);
@@ -58,19 +86,12 @@ let main = {};
   }
 
   function navigateTree(predicate) {
-    let currentRoot = 0;
-    for (let i = 0; i < mapRoots.length; i++) {
-      if (mapRoots[i].mapId === currentMap) {
-        currentRoot = mapRoots[i];
-        break;
-      }
-    }
-    
+    let currentRoot = mapRoots[currentMap - 1];
     recursionB(currentRoot, predicate);
   }
 
   function findNodeByProp(property, value) {
-    var returnNode = null;
+    let returnNode = null;
     
     navigateTree(currentNode => {
       if (currentNode[property] === value) {
@@ -80,9 +101,32 @@ let main = {};
     
     return returnNode;
   }
-
-  function debugRecursion(node) {
-    //console.log("Hello world #" + node.id + ": " + node.textFill);
+  
+  function findNodeById(value) {
+    return findNodeByProp("id", value);
+  }
+  
+  function isAncestorTo(nodeIdA, nodeIdB) {
+    let returnValue = false;
+    let currentNode = findNodeById(nodeIdB);
+    if (currentNode === null) {
+      return false;
+    }
+    while (currentNode.id !== -1) {
+      if (nodeIdA === currentNode.id) {
+        returnValue = true;
+        break;
+      }
+      if (!currentNode.parents) {
+        // assume currentNode is the map root
+        // can't go further up
+        break;
+      }
+      currentNode = currentNode.parents[0];
+      //TODO: how to account for branching ancestors?
+    }
+    
+    return returnValue;
   }
 
   function makeNode(currentNode, x, y) {
@@ -98,37 +142,57 @@ let main = {};
     let clickCapture = doNothing;
     
     switch(currentNode.type) {
-      case 3: 
-        imageClass = "boss-image";
-      case 2: 
-      case 1: 
-        imageClass = (imageClass !== null && imageClass.length > 0) ? imageClass : "lock-image";
+      case 1: // starting node
+        imageClass = "lock-image";
         shapeObject = goal_template.cloneNode(true);
         groupObject.id = "goal" + currentNode.id;
+        fillColor = "white";
+        hoverCapture = hoverRoot;
+        clickCapture = clickRoot;
         break;
-      case 5: 
+      case 2: // elevator access
+        imageClass = "lock-image";
+        shapeObject = goal_template.cloneNode(true);
+        groupObject.id = "goal" + currentNode.id;
+        fillColor = "#" + objColors.elevator;
+        hoverCapture = hoverElevator;
+        clickCapture = clickElevator;
+        break;
+      case 3: // boss battle
+        imageClass = "boss-image";
+        shapeObject = goal_template.cloneNode(true);
+        groupObject.id = "goal" + currentNode.id;
+        fillColor = "#" + objColors.boss;
+        break;
+      case 5: // lock
         shapeObject = lock_template.cloneNode(true);
         groupObject.id = "lock" + currentNode.id;
-        if (bossData.find(entry => entry === currentNode.pickupType) !== undefined) {
+        if (bossData.includes(currentNode.pickupType)) {
           imageClass = "boss-lock-image";
+          fillColor = "#"+ objColors.boss;
         } else {
           imageClass = "lock-image";
+          fillColor = "#"+ objColors[pickupType[currentNode.pickupType]];
         }
+        clickCapture = unlock;
+        groupObject.setAttribute("isUnlocked", "false");
         break;
-      case 8: 
-      case 9: 
+      case 8: // required key
+      case 9: // required key (blank)
         shapeObject = key_template.cloneNode(true);
         groupObject.id = "key" + currentNode.id;
         imageClass = "key-image";
+        fillColor = "#"+ objColors[pickupType[currentNode.pickupType]];
         break;
-      case 4: 
-      case 7: 
-      case 10: 
+      case 4: // save room
+      case 7: // unrequired key
+      case 10: // other node
         shapeObject = unreq_template.cloneNode(true);
         groupObject.id = "unreq" + currentNode.id;
         imageClass = "key-image";
+        fillColor = "#"+ objColors[pickupType[currentNode.pickupType]];
         break;
-      case 6: 
+      case 6: // one-way arrow
         if (currentNode.textFill === "up") {
           shapeObject = arrow_up_template.cloneNode(true);
         } else if (currentNode.textFill === "down") {
@@ -139,101 +203,37 @@ let main = {};
           shapeObject = arrow_right_template.cloneNode(true);
         }
         groupObject.id = "oneway" + currentNode.id;
+        //fillColor = "#"+ areaData[currentNode.mapId].color;
+        fillColor = "white";
         break;
       case 0: 
       default: 
         shapeEnum = iconType.none;
-    }
-    
-    switch(currentNode.type) {
-      case 0:
         fillColor = "white";
-        break;
-      case 1:
-        fillColor = "white";
-        break;
-      case 2:
-        fillColor = "#" + objColors.elevator;
-        break;
-      case 3:
-        fillColor = "#" + objColors.boss;
-        break;
-      case 4:
-        fillColor = "#"+ objColors[pickupType[currentNode.pickupType]];
-        break;
-      case 5:
-        if (bossData.find(entry => entry === currentNode.pickupType) !== undefined) {
-          fillColor = "#"+ objColors.boss;
-        } else {
-          fillColor = "#"+ objColors[pickupType[currentNode.pickupType]];
-        }
-        break;
-      case 6:
-        //fillColor = "#"+ areaData[currentNode.mapId].color;
-        fillColor = "white";
-        break;
-      case 7:
-        fillColor = "#"+ objColors[pickupType[currentNode.pickupType]];
-        break;
-      case 8:
-        fillColor = "#"+ objColors[pickupType[currentNode.pickupType]];
-        break;
-      case 9:
-        fillColor = "#"+ objColors[pickupType[currentNode.pickupType]];
-        break;
-      case 10:
-        fillColor = "#"+ objColors[pickupType[currentNode.pickupType]];
-        break;
-      default:
-        break;
     }
     
     shapeObject.setAttribute("fill", fillColor);
-    
-    switch(currentNode.type) {
-      case 0:
-        break;
-      case 1:
-        hoverCapture = hoverRoot;
-        clickCapture = clickRoot;
-        break;
-      case 2:
-        hoverCapture = hoverElevator;
-        clickCapture = clickElevator;
-        break;
-      case 3:
-        break;
-      case 4:
-        break;
-      case 5:
-        clickCapture = unlock;
-        groupObject.setAttribute("isUnlocked", "false");
-        break;
-      case 6:
-        break;
-      case 7:
-        break;
-      case 8:
-        break;
-      case 9:
-        break;
-      case 10:
-        break;
-    }
     
     shapeObject.removeAttribute("id");
     groupObject.appendChild(shapeObject);
     
     let textObject = null;
     
-    if (currentNode.textFill.length > 0 && currentNode.type !== 6) {
+    if ((currentNode.textFill.length > 0 || (currentNode.numReqd > 1)) && currentNode.type !== 6) {
       textObject = document.createElementNS("http://www.w3.org/2000/svg", "text");
       textObject.classList.add("text-node");
       textObject.setAttribute("x", "0");
       textObject.setAttribute("y", "9");
       textObject.setAttribute("fill", "black");
       textObject.setAttribute("text-anchor", "middle");
-      textObject.innerHTML = currentNode.textFill;
+      
+      if (currentNode.numReqd > 1) {
+        textObject.innerHTML = "Required: " + currentNode.numReqd;
+      } else if (currentNode.type === 4) {
+        textObject.innerHTML = "S";
+      } else {
+        textObject.innerHTML = currentNode.textFill;
+      }
     }
     
     let imageObject = null;
@@ -258,6 +258,7 @@ let main = {};
       if (currentNode.children.length === 0 && !(currentNode.parentId.length > 1)) {
         textObject.setAttribute("y", "81");
       } else {
+        imageObject.setAttribute("y", "-48");
         textObject.setAttribute("y", "29");
       }
       groupObject.appendChild(imageObject);
@@ -341,8 +342,7 @@ let main = {};
   function getCurrentCoordsOfNode(nodeObj) {
     let returnValues = [];
     let str = nodeObj.attributes.transform.value;
-    let pattern = /\d+/g;
-    let result = str.match(pattern);
+    let result = str.match(digitPattern);
     returnValues.push(parseInt(result[0]));
     returnValues.push(parseInt(result[1]));
     
@@ -385,10 +385,13 @@ let main = {};
     //console.log("elevator was clicked!", e);
     let parent = e.target.parentElement;
     let str = parent.id;
-    let pattern = /\d+/g;
-    let result = str.match(pattern);
+    let result = str.match(digitPattern);
     result = parseInt(result[0]);
-    let retrievedNode = findNodeByProp("id", result);
+    let retrievedNode = findNodeById(result);
+    if (retrievedNode === null) {
+      console.error("Could not find this elevator's data!");
+      return;
+    }
     let nextRoot = workingData.find(entry => entry.id === retrievedNode.pointsToElevatorId);
     if (nextRoot === undefined) {
       console.log("Next map not implemented");
@@ -496,12 +499,10 @@ let main = {};
     }
     childCollection = parentElement.children;
     
-    let pattern = /\d+/g;
-    
     for (let i = 0; i < childCollection.length; i++) {
       let child = childCollection[i];
       let str = child.attributes.transform.value;
-      let result = str.match(pattern);
+      let result = str.match(digitPattern);
       
       if (parseInt(result[0]) === x && parseInt(result[1]) === y) {
         returnValue.push(child);
@@ -520,7 +521,6 @@ let main = {};
     let toShiftArray = [];
     let toConnectArray = [];
     let collecs = [];
-    let pattern = /\d+/g;
     collecs.push(gridPaths);
     collecs.push(junctions);
     collecs.push(mainMeat);
@@ -540,7 +540,7 @@ let main = {};
     for (let i = 0; i < toShiftArray.length; i++) {
       let moveThis = toShiftArray[i];
       let str = moveThis.attributes.transform.value;
-      let result = str.match(pattern);
+      let result = str.match(digitPattern);
       let childCoords = [];
       let tempCursorSave = {};
       tempCursorSave.x = getCursor().x;
@@ -558,7 +558,7 @@ let main = {};
       let candidate = toConnectArray[i];
       if (candidate.classList.contains("path-right")) {
         let str = candidate.attributes.transform.value;
-        let result = str.match(pattern);
+        let result = str.match(digitPattern);
         let ancCoords = [];
         ancCoords.push(parseInt(result[0]));
         ancCoords.push(parseInt(result[1]));
@@ -583,8 +583,7 @@ let main = {};
 
   function expandViewbox() {
     let str = playground.attributes.viewBox.value;
-    let pattern = /\d+/g;
-    let result = str.match(pattern);
+    let result = str.match(digitPattern);
     let newStr = "" + result[0] + " " + result[1] + " ";
     if (parseInt(result[2]) < (getCursor().x + 144)) {
       newStr += (getCursor().x + 144 + 72);
@@ -643,139 +642,154 @@ let main = {};
       }
     }
   }
+  
+  function createCousinVine(elementId, destinationRaw) {
+    let destinationId = "";
+    
+    switch (destinationRaw.type) {
+      case 3: 
+      case 2: 
+      case 1: 
+        destinationId = "goal" + destinationRaw.id;
+        break;
+      case 5: 
+        destinationId = "lock" + destinationRaw.id;
+        break;
+      case 8: 
+      case 9: 
+        destinationId = "key" + destinationRaw.id;
+        break;
+      case 4: 
+      case 7: 
+      case 10: 
+        destinationId = "unreq" + destinationRaw.id;
+        break;
+      case 6: 
+        destinationId = "oneway" + destinationRaw.id;
+        break;
+    }
+    let dest = document.getElementById(destinationId);
+    
+    if (dest === null) {
+      // icon is not on the field yet (hidden behind inactive lock)
+      return;
+    }
+    
+    // get tween height
+    let source = document.getElementById(elementId);
+    
+    let str = source.attributes.transform.value;
+    let result = str.match(digitPattern);
+    let sourceCoords = [];
+    sourceCoords.push(parseInt(result[0]));
+    sourceCoords.push(parseInt(result[1]));
+    str = dest.attributes.transform.value;
+    result = str.match(digitPattern);
+    let destCoords = [];
+    destCoords.push(parseInt(result[0]));
+    destCoords.push(parseInt(result[1]));
+    let earlier = null;
+    let earlierCoords = [];
+    let later = null;
+    let laterCoords = [];
+    let flipped = false;
+    
+    if (sourceCoords[0] > destCoords[0]) {
+      earlier = dest;
+      earlierCoords = destCoords;
+      later = source;
+      laterCoords = sourceCoords;
+      flipped = true;
+    } else {
+      earlier = source;
+      earlierCoords = sourceCoords;
+      later = dest;
+      laterCoords = destCoords;
+    }
+    
+    let maxHeight = sourceCoords[1] > destCoords[1] ? sourceCoords[1] : destCoords[1];
+    
+    for (let j = 0; j < mainMeat.length; j++) {
+      let child = mainMeat[j];
+      let childCoords = getCurrentCoordsOfNode(child);
+      if (earlierCoords[0] < childCoords[0] && childCoords[0] < laterCoords[0]) {
+        // now in an area between the source and the destination
+        if (childCoords[1] > maxHeight) {
+          maxHeight = childCoords[1];
+        }
+      }
+    }
+    
+    maxHeight += 144; // add one more space in order to clear the last row in each column
+    
+    // calculate drop distance for source node
+    let sourceHeight = maxHeight - sourceCoords[1];
+    let sourceDrop = sourceHeight / 144;
+    // calculate drop distance for destination node
+    let destHeight = maxHeight - destCoords[1];
+    let destDrop = destHeight / 144;
+    // calculate lateral distance between source and destination
+    let diff = laterCoords[0] - earlierCoords[0];
+    let diffRun = diff / 144;
+    
+    // and now make the graphics
+    
+    centerCursorOnElement(elementId);
+    for (let j = 0; j < sourceDrop; j++) {
+      insertPathLine("d");
+      shiftCursor(0, 1);
+      insertPathLine("u");
+    }
+    insertJunctionDot();
+    centerCursorOnElement(destinationId);
+    for (let j = 0; j < destDrop; j++) {
+      insertPathLine("d");
+      shiftCursor(0, 1);
+      insertPathLine("u");
+    }
+    insertJunctionDot();
+    for (let j = 0; j < diffRun; j++) {
+      if (flipped) {
+        insertPathLine("r");
+        shiftCursor(1, 0);
+        insertPathLine("l");
+      } else {
+        insertPathLine("l");
+        shiftCursor(-1, 0);
+        insertPathLine("r");
+      }
+    }
+    
+    // reset cursor to original position
+    centerCursorOnElement(elementId);
+  }
 
   function attemptVines(elementId, node) {
-    let tempCursorSave = {};
-    tempCursorSave.x = getCursor().x;
-    tempCursorSave.y = getCursor().y;
-    let pattern = /\d+/g;
-    
-    for (let i = 0; i < mapVines.length; i++) {
-      if (node.id === mapVines[i][0] || node.id === mapVines[i][1]) {
-        let destinationRaw = null;
+    for (let i = 0; i < mapVines[currentMap - 1].length; i++) {
+      let clusterDests = [];
+      if (mapVines[currentMap - 1][i].includes(node.id)) {
+        clusterDests = mapVines[currentMap - 1][i].filter(n => n !== node.id);
+      }
+      
+      if (clusterDests.length === 0) {
+        // bad data capture
+        continue;
+      }
+      
+      for (let k = 0; k < clusterDests.length; k++) {
+        let destinationRaw = findNodeById(clusterDests[k]);
         
-        // attempt to see if the destination is showing
-        if (node.id === mapVines[i][0]) {
-          destinationRaw = findNodeByProp("id", mapVines[i][1]);
+        if (destinationRaw === null || destinationRaw.type === 0) {
+          continue;
+        }
+        
+        if (isAncestorTo(destinationRaw.id, node.id)) {
+          console.log("attempting to vine with ancestor!");
+          //TODO: make room for the new connection
         } else {
-          destinationRaw = findNodeByProp("id", mapVines[i][0]);
-        }
-        
-        let destinationId = "";
-        if (destinationRaw.type === 0) {
-          break;
-        }
-        switch (destinationRaw.type) {
-          case 3: 
-          case 2: 
-          case 1: 
-            destinationId = "goal" + destinationRaw.id;
-            break;
-          case 5: 
-            destinationId = "lock" + destinationRaw.id;
-            break;
-          case 8: 
-          case 9: 
-            destinationId = "key" + destinationRaw.id;
-            break;
-          case 4: 
-          case 7: 
-          case 10: 
-            destinationId = "unreq" + destinationRaw.id;
-            break;
-          case 6: 
-            destinationId = "oneway" + destinationRaw.id;
-            break;
-        }
-        let attempt = document.getElementById(destinationId);
-        
-        if (attempt === null) {
-          break;
-        }
-        
-        // get tween height
-        let source = document.getElementById(elementId);
-        let dest = attempt;
-        
-        let str = source.attributes.transform.value;
-        let result = str.match(pattern);
-        let sourceCoords = [];
-        sourceCoords.push(parseInt(result[0]));
-        sourceCoords.push(parseInt(result[1]));
-        str = dest.attributes.transform.value;
-        result = str.match(pattern);
-        let destCoords = [];
-        destCoords.push(parseInt(result[0]));
-        destCoords.push(parseInt(result[1]));
-        let earlier = null;
-        let earlierCoords = [];
-        let later = null;
-        let laterCoords = [];
-        let flipped = false;
-        
-        if (sourceCoords[0] > destCoords[0]) {
-          earlier = dest;
-          earlierCoords = destCoords;
-          later = source;
-          laterCoords = sourceCoords;
-          flipped = true;
-        } else {
-          earlier = source;
-          earlierCoords = sourceCoords;
-          later = dest;
-          laterCoords = destCoords;
-        }
-        
-        let maxHeight = sourceCoords[1] > destCoords[1] ? sourceCoords[1] : destCoords[1];
-        
-        for (let j = 0; j < mainMeat.length; j++) {
-          let child = mainMeat[j];
-          let childCoords = getCurrentCoordsOfNode(child);
-          if (earlierCoords[0] < childCoords[0] && childCoords[0] < laterCoords[0]) {
-            // now in an area between the source and the destination
-            if (childCoords[1] > maxHeight) {
-              maxHeight = childCoords[1];
-            }
-          }
-        }
-        
-        maxHeight += 144; // add one more space in order to clear the last row in each column
-        
-        // calculate drop distance for source node
-        let sourceHeight = maxHeight - sourceCoords[1];
-        let sourceDrop = sourceHeight / 144;
-        // calculate drop distance for destination node
-        let destHeight = maxHeight - destCoords[1];
-        let destDrop = destHeight / 144;
-        // calculate lateral distance between source and destination
-        let diff = laterCoords[0] - earlierCoords[0];
-        let diffRun = diff / 144;
-        
-        // and now make the graphics
-        centerCursorOnElement(elementId);
-        for (let j = 0; j < sourceDrop; j++) {
-          insertPathLine("d");
-          shiftCursor(0, 1);
-          insertPathLine("u");
-        }
-        insertJunctionDot();
-        centerCursorOnElement(destinationId);
-        for (let j = 0; j < destDrop; j++) {
-          insertPathLine("d");
-          shiftCursor(0, 1);
-          insertPathLine("u");
-        }
-        insertJunctionDot();
-        for (let j = 0; j < diffRun; j++) {
-          if (flipped) {
-            insertPathLine("r");
-            shiftCursor(1, 0);
-            insertPathLine("l");
-          } else {
-            insertPathLine("l");
-            shiftCursor(-1, 0);
-            insertPathLine("r");
-          }
+          console.log("attempting to vine with cousin!");
+          // continue with this one
+          createCousinVine(elementId, destinationRaw);
         }
       }
     }
@@ -793,7 +807,6 @@ let main = {};
       insertPathLine("r");
       shiftCursor(1, 0);
       insertPathLine("l");
-      insertJunctionDot();
     } else {
       insertPathLine("d");
       shiftCursor(0, 1);
@@ -825,7 +838,7 @@ let main = {};
       let newNode = makeNode(child); ///HERE
       
       // recursion
-      if (child.type !== nodeType.lock || child.isUnlocked) {
+      //if (child.type !== nodeType.lock || child.isUnlocked) {
         let nChildren = {
           val: 1
         };
@@ -833,7 +846,7 @@ let main = {};
         attemptVines(newNode.id, child);
         prevAccumulator = nChildren;
         accumulator.val += nChildren.val - 1;
-      }
+      //}
       
       shiftCursor(0, -1);
       if (node.children.length === 1) {
@@ -849,13 +862,17 @@ let main = {};
     centerCursorOnElement(parent.id);
     
     let str = parent.id;
-    let pattern = /\d+/g;
-    let result = str.match(pattern);
+    let result = str.match(digitPattern);
     result = parseInt(result[0]);
-    let retrievedNode = findNodeByProp("id", result);
+    let retrievedNode = findNodeById(result);
+    
+    if (retrievedNode === null) {
+      console.error("Could not find this root!");
+    }
     
     if (retrievedNode.expanded) {
       //console.log("already expanded!");
+      // TODO: make elevators to go previous map, add exception for game root
     } else {
       //console.log("expanding now!");
       retrievedNode.expanded = true;
@@ -864,14 +881,18 @@ let main = {};
   }
 
   function unlock(e) {
+    return;
     let parent = e.target.parentElement;
     centerCursorOnElement(parent.id);
     
     let str = parent.id;
-    let pattern = /\d+/g;
-    let result = str.match(pattern);
+    let result = str.match(digitPattern);
     result = parseInt(result[0]);
-    let retrievedNode = findNodeByProp("id", result);
+    let retrievedNode = findNodeById(result);
+    
+    if (retrievedNode === null) {
+      console.error("Could not find this lock!");
+    }
     
     if (retrievedNode.isUnlocked) {
       //console.log("lock is already broken");
@@ -910,9 +931,23 @@ let main = {};
     context.fill();
   };
 
+  function debugRecursion(node) {
+    console.log("" + areaData[mapRoots[(currentMap - 1)].mapId].name + " #" + node.id + ": " + node.textFill);
+  }
+  
+  function debugTree() {
+    console.log("vine cluster:: total", mapVines);
+    let saveMap = currentMap;
+    for (let i = 0; i < numMapsReady; i++) {
+      currentMap = 1 + i;
+      navigateTree(debugRecursion);
+    }
+    currentMap = saveMap;
+    console.log("maps for", numMapsReady, "/", mapRoots.length, "areas ready");
+  }
+
   function init() {
     makeTree();
-    //navigateTree(debugRecursion);
     
     moveCursor(0, 0);
     makeNode(mapRoots[(currentMap - 1)]);
@@ -920,4 +955,6 @@ let main = {};
 
   main.init = init;
   main.resizeCanvas = resizeCanvas;
+  main.workingData = workingData;
+  main.debugTree = debugTree;
 })();
