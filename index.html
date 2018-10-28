@@ -56,11 +56,13 @@
     
   </section>
   <section id="hiddenSpriteSheet">
-    <img src="images/util/m1_grid.png" id="grid" width="24" height="24">
-    <img src="images/util/m2_grid.png" width="24" height="24">
-    <img src="images/util/sm_grid.png" width="48" height="48">
-    <img src="images/util/mf_grid.png" width="24" height="24">
-    <img src="images/util/mp_grid.png" width="24" height="24">
+    <img src="images/util/m1_grid.png" id="grid_m1" width="24" height="24">
+    <img src="images/util/m1_grid.png" id="grid_zm" width="24" height="24">
+    <img src="images/util/m2_grid.png" id="grid_m2" width="24" height="24">
+    <img src="images/util/m2_grid.png" id="grid_sr" width="24" height="24">
+    <img src="images/util/sm_grid.png" id="grid_sm" width="48" height="48">
+    <img src="images/util/mf_grid.png" id="grid_mf" width="24" height="24">
+    <img src="images/util/mp_grid.png" id="grid_mp" width="24" height="24">
   </section>
   
   <script src="js/iconType.js" type="text/javascript"></script>
@@ -81,7 +83,7 @@
       main.init();
       
       function zoom(e) {
-        let play = document.getElementById("playground");
+        let play = document.getElementById("mapSVG-" + main.currentMap);
         let viewBoxAttr = play.getAttribute("viewBox");
         let viewBoxProps = viewBoxAttr.split(' ');
         let oldX = parseFloat(viewBoxProps[0]);
@@ -91,7 +93,7 @@
         let centerX = e.clientX;
         let centerY = e.clientY;
         
-        if (e.target !== playground) {
+        if (e.target !== play) {
           centerX = parseInt(e.target.parentElement.attributes.transform.value.match(/\d+/g)[0]);
           centerY = parseInt(e.target.parentElement.attributes.transform.value.match(/\d+/g)[1]);
         }
@@ -122,7 +124,7 @@
         play.setAttribute("viewBox", newViewBox.join(' '));
       }
       
-      document.getElementById("playground").onwheel = (e) => {
+      document.getElementById("mainground").onwheel = (e) => {
         e.preventDefault();
         console.log("did wheel", e);
         zoom(e);

@@ -1140,10 +1140,10 @@ const rawData = [
   }, {
     "id": 94,
     "type": 3,
-    "image": "",
+    "image": "motherBrain",
     "screenshot": "",
     "parentId": 93,
-    "textFill": "MOTHER BRAIN",
+    "textFill": "",
     "mapId": 5,
     "numReqd": 1,
     "canBeSBd": false,

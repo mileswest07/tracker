@@ -61,6 +61,14 @@ body {
 
 .boss-image { }
 
+.node-hover-overlay {
+  display: none;
+}
+
+.node-hover-overlay.show {
+  display: block;
+}
+
 #lock_template {
   display: none;
 }

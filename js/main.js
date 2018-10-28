@@ -4,10 +4,24 @@ let main = {};
   let root = null;
   let workingData = rawData;
   let mapRoots = [];
-  let currentMap = 0;
   let numMapsReady = 5;
   let digitPattern = /\d+/g;
   let allowColors = false;
+  
+  const games = {
+    "m": "m1",
+    "2": "m2",
+    "s": "sm",
+    "o": "om",
+    "f": "mf",
+    "z": "zm",
+    "r": "sr",
+    "p": "mp",
+    "e": "pe",
+    "c": "pc",
+    "h": "ph",
+    "b": "pb"
+  };
 
   let cursor = {
     x: 0,
@@ -20,7 +34,6 @@ let main = {};
     let mapSearch = document.getElementById("mapSVG-" + mapId);
     if (mapSearch !== null) {
       // hide current map
-      console.log(mapSearch);
       if (mapSearch.classList) {
         mapSearch.classList.add("hide-map");
       } else {
@@ -48,12 +61,12 @@ let main = {};
     let mapSource = document.getElementById("mainground");
     let mapSearch = document.getElementById("mapSVG-" + mapId);
     // hide current map
-    hideMap(currentMap);
-    currentMap = mapId;
+    hideMap(main.currentMap);
+    main.currentMap = mapId;
     if (mapSearch === null) {
       // create new map
       mapSearch = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      mapSearch.setAttribute("id", "mapSVG-" + currentMap);
+      mapSearch.setAttribute("id", "mapSVG-" + main.currentMap);
       mapSearch.setAttribute("class", "map-svg");
       mapSearch.setAttribute("width", "100%");
       mapSearch.setAttribute("height", "100%");
@@ -75,22 +88,21 @@ let main = {};
       mapSearch.appendChild(mainMeat);
       mapSource.appendChild(mapSearch);
       
-      let newNode = makeNode(mapRoots[currentMap - 1], 0, 0);
-      if (currentMap !== 1) {
-        console.log("new map");
-        mapRoots[currentMap - 1].expanded = true;
-        animateChildren(newNode.id, mapRoots[currentMap - 1], { val: 1 });
+      let newNode = makeNode(mapRoots[main.currentMap - 1], 0, 0);
+      if (main.currentMap !== 1) {
+        mapRoots[main.currentMap - 1].expanded = true;
+        animateChildren(newNode.id, mapRoots[main.currentMap - 1], { val: 1 });
       }
     } else {
       // move next map to front
-      showMap(currentMap);
+      showMap(main.currentMap);
     }
     moveCursor(0, 0);
   }
   
   function getCurrentMapElement(childCategory) {
     let returnValue = null;
-    let mapSearch = document.getElementById("mapSVG-" + currentMap);
+    let mapSearch = document.getElementById("mapSVG-" + main.currentMap);
     if (mapSearch !== null) {
       let index = -1;
       switch (childCategory) {
@@ -184,7 +196,7 @@ let main = {};
   }
 
   function navigateTree(predicate) {
-    let currentRoot = mapRoots[currentMap - 1];
+    let currentRoot = mapRoots[main.currentMap - 1];
     recursionB(currentRoot, predicate);
   }
 
@@ -230,8 +242,9 @@ let main = {};
   function makeNode(currentNode, x, y) {
     let shapeEnum = 0;
     let shapeObject = null;
+    let hoverShape = null;
     let groupObject = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    groupObject.id = "mapSVG-" + currentMap + "_";
+    groupObject.id = "mapSVG-" + main.currentMap + "_";
     let imageClass = null;
     let fillColor = "white";
     let titleText = ""; // todo: apply property to each category
@@ -245,6 +258,8 @@ let main = {};
         shapeObject = goal_template.cloneNode(true);
         groupObject.id += "goal" + currentNode.id;
         fillColor = "white";
+        hoverShape = goal_template.cloneNode(true);
+        hoverShape.removeAttribute("id");
         hoverCapture = hoverRoot;
         clickCapture = clickRoot;
         break;
@@ -254,17 +269,25 @@ let main = {};
         groupObject.id += "goal" + currentNode.id;
         if (currentNode.pickupType !== 0) {
           fillColor = "#" + objColors[pickupType[currentNode.pickupType]];
+          hoverCapture = hoverElevator2;
+          clickCapture = doNothing;
         } else {
           fillColor = "#" + objColors.elevator;
+          hoverCapture = hoverElevator;
+          clickCapture = clickElevator;
         }
-        hoverCapture = hoverElevator;
-        clickCapture = clickElevator;
+        hoverShape = goal_template.cloneNode(true);
+        hoverShape.removeAttribute("id");
         break;
       case 3: // boss battle
         imageClass = "boss-image";
         shapeObject = goal_template.cloneNode(true);
         groupObject.id += "goal" + currentNode.id;
         fillColor = "#" + objColors.boss;
+        hoverShape = goal_template.cloneNode(true);
+        hoverShape.removeAttribute("id");
+        hoverCapture = hoverBoss;
+        clickCapture = defeatBoss;
         break;
       case 5: // lock
         shapeObject = lock_template.cloneNode(true);
@@ -276,8 +299,11 @@ let main = {};
           imageClass = "lock-image";
           fillColor = "#"+ objColors[pickupType[currentNode.pickupType]];
         }
-        clickCapture = unlock;
         groupObject.setAttribute("isUnlocked", "false");
+        hoverShape = lock_template.cloneNode(true);
+        hoverShape.removeAttribute("id");
+        hoverCapture = hoverLock;
+        clickCapture = unlock;
         break;
       case 8: // required key
       case 9: // required key (blank)
@@ -285,6 +311,14 @@ let main = {};
         groupObject.id += "key" + currentNode.id;
         imageClass = "key-image";
         fillColor = "#"+ objColors[pickupType[currentNode.pickupType]];
+        hoverShape = key_template.cloneNode(true);
+        hoverShape.removeAttribute("id");
+        hoverCapture = hoverKey;
+        if (currentNode.type === 9) {
+          clickCapture = assignKey;
+        } else {
+          clickCapture = collectKey;
+        }
         break;
       case 4: // save room
       case 7: // unrequired key
@@ -293,16 +327,30 @@ let main = {};
         groupObject.id += "unreq" + currentNode.id;
         imageClass = "key-image";
         fillColor = "#"+ objColors[pickupType[currentNode.pickupType]];
+        hoverShape = unreq_template.cloneNode(true);
+        hoverShape.removeAttribute("id");
+        hoverCapture = hoverUnreq;
+        if (currentNode.type === 4) {
+          clickCapture = save;
+        } else if (currentNode.type === 7) {
+          clickCapture = collectKey;
+        } else {
+          clickCapture = doNothing;
+        }
         break;
       case 6: // one-way arrow
         if (currentNode.textFill === "up") {
           shapeObject = arrow_up_template.cloneNode(true);
+          hoverShape = arrow_up_template.cloneNode(true);
         } else if (currentNode.textFill === "down") {
           shapeObject = arrow_down_template.cloneNode(true);
+          hoverShape = arrow_down_template.cloneNode(true);
         } else if (currentNode.textFill === "left") {
           shapeObject = arrow_left_template.cloneNode(true);
+          hoverShape = arrow_left_template.cloneNode(true);
         } else {
           shapeObject = arrow_right_template.cloneNode(true);
+          hoverShape = arrow_right_template.cloneNode(true);
         }
         groupObject.id += "oneway" + currentNode.id;
         if (allowColors) {
@@ -310,6 +358,9 @@ let main = {};
         } else {
           fillColor = "white";
         }
+        hoverShape.removeAttribute("id");
+        hoverCapture = hoverOther;
+        clickCapture = doNothing;
         break;
       case 0: 
       default: 
@@ -432,6 +483,21 @@ let main = {};
       groupObject.appendChild(escapeArrow);
     }
     
+    // add hovering menu
+    hoverShape.setAttribute("class", "node-hover-overlay");
+    if (hoverShape.classList) {
+      hoverShape.classList.add("node-hover-overlay");
+    } else {
+      let arr = hoverShape.className.split(" ");
+      if (arr.indexOf("node-hover-overlay") == -1) {
+          hoverShape.className += " " + "node-hover-overlay";
+      }
+    }
+    hoverShape.removeAttribute("stroke");
+    hoverShape.removeAttribute("stroke-width");
+    hoverShape.setAttribute("fill", "rgb(0, 0, 0, 0.33)");
+    groupObject.appendChild(hoverShape);
+    
     getCurrentMapElement("mainMeat").appendChild(groupObject);
     expandViewbox();
     
@@ -492,7 +558,7 @@ let main = {};
       shapeObject.setAttribute("transform", "translate(" + getCursor().x + " " + getCursor().y + ")");
     }
     if (allowColors) {
-      shapeObject.setAttribute("fill", "#"+ areaData[mapRoots[currentMap - 1].mapId].color);
+      shapeObject.setAttribute("fill", "#"+ areaData[mapRoots[main.currentMap - 1].mapId].color);
     }
     
     getCurrentMapElement("junctions").appendChild(shapeObject);
@@ -526,7 +592,7 @@ let main = {};
       copy.setAttribute("transform", "translate(" + getCursor().x + " " + getCursor().y + ")");
     }
     if (allowColors) {
-      copy.children[0].setAttribute("fill", "#"+ areaData[mapRoots[currentMap - 1].mapId].color);
+      copy.children[0].setAttribute("fill", "#"+ areaData[mapRoots[main.currentMap - 1].mapId].color);
     }
     
     getCurrentMapElement("gridPaths").appendChild(copy);
@@ -642,24 +708,6 @@ let main = {};
     }
   }
 
-  function expandViewbox() {
-    let mapSearch = document.getElementById("mapSVG-" + currentMap);
-    let str = mapSearch.attributes.viewBox.value;
-    let result = str.match(digitPattern);
-    let newStr = "" + result[0] + " " + result[1] + " ";
-    if (parseInt(result[2]) < (getCursor().x + 144)) {
-      newStr += (getCursor().x + 144 + 72);
-    } else {
-      newStr += result[2];
-    }
-    if (parseInt(result[3]) < (getCursor().y + 144)) {
-      newStr += " " + (getCursor().y + 144+ 72);
-    } else {
-      newStr += " " + result[3];
-    }
-    mapSearch.attributes.viewBox.value = newStr;
-  }
-
   function calcChildrenShift(node, accumulator) {
     if (node.children.length === 0) {
       accumulator.val = 1;
@@ -712,22 +760,22 @@ let main = {};
       case 3: 
       case 2: 
       case 1: 
-        destinationId = "mapSVG-" + currentMap + "_goal" + destinationRaw.id;
+        destinationId = "mapSVG-" + main.currentMap + "_goal" + destinationRaw.id;
         break;
       case 5: 
-        destinationId = "mapSVG-" + currentMap + "_lock" + destinationRaw.id;
+        destinationId = "mapSVG-" + main.currentMap + "_lock" + destinationRaw.id;
         break;
       case 8: 
       case 9: 
-        destinationId = "mapSVG-" + currentMap + "_key" + destinationRaw.id;
+        destinationId = "mapSVG-" + main.currentMap + "_key" + destinationRaw.id;
         break;
       case 4: 
       case 7: 
       case 10: 
-        destinationId = "mapSVG-" + currentMap + "_unreq" + destinationRaw.id;
+        destinationId = "mapSVG-" + main.currentMap + "_unreq" + destinationRaw.id;
         break;
       case 6: 
-        destinationId = "mapSVG-" + currentMap + "_oneway" + destinationRaw.id;
+        destinationId = "mapSVG-" + main.currentMap + "_oneway" + destinationRaw.id;
         break;
     }
     let dest = document.getElementById(destinationId);
@@ -828,10 +876,10 @@ let main = {};
   }
 
   function attemptVines(elementId, node) {
-    for (let i = 0; mapVines[currentMap - 1] && i < mapVines[currentMap - 1].length; i++) {
+    for (let i = 0; mapVines[main.currentMap - 1] && i < mapVines[main.currentMap - 1].length; i++) {
       let clusterDests = [];
-      if (mapVines[currentMap - 1][i].includes(node.id)) {
-        clusterDests = mapVines[currentMap - 1][i].filter(n => n !== node.id);
+      if (mapVines[main.currentMap - 1][i].includes(node.id)) {
+        clusterDests = mapVines[main.currentMap - 1][i].filter(n => n !== node.id);
       }
       
       if (clusterDests.length === 0) {
@@ -850,10 +898,10 @@ let main = {};
         }
         
         if (isAncestorTo(destinationRaw.id, node.id)) {
-          console.log("attempting to vine with ancestor!");
+          //console.log("attempting to vine with ancestor!");
           //TODO: make room for the new connection
         } else {
-          console.log("attempting to vine with cousin!");
+          //console.log("attempting to vine with cousin!");
           // continue with this one
           createCousinVine(elementId, destinationRaw);
         }
@@ -930,14 +978,110 @@ let main = {};
 
   function removeHover(e) {
     //console.log("hover ended!");
+    let me = e.target;
+    let children = me.childNodes;
+    
+    for (let i = 0; i < children.length; i++) {
+      if (children[i].classList.contains("node-hover-overlay")) {
+        children[i].classList.remove("show");
+      }
+    }
   }
 
   function hoverRoot(e) {
     //console.log("root was hovered!");
+    let me = e.target;
+    let children = me.childNodes;
+    
+    for (let i = 0; i < children.length; i++) {
+      if (children[i].classList.contains("node-hover-overlay")) {
+        children[i].classList.add("show");
+      }
+    }
   }
 
   function hoverElevator(e) {
     //console.log("elevator was hovered!");
+    let me = e.target;
+    let children = me.childNodes;
+    
+    for (let i = 0; i < children.length; i++) {
+      if (children[i].classList.contains("node-hover-overlay")) {
+        children[i].classList.add("show");
+      }
+    }
+  }
+
+  function hoverElevator2(e) {
+    //console.log("elevator2 was hovered!");
+    let me = e.target;
+    let children = me.childNodes;
+    
+    for (let i = 0; i < children.length; i++) {
+      if (children[i].classList.contains("node-hover-overlay")) {
+        children[i].classList.add("show");
+      }
+    }
+  }
+
+  function hoverBoss(e) {
+    //console.log("boss was hovered!");
+    let me = e.target;
+    let children = me.childNodes;
+    
+    for (let i = 0; i < children.length; i++) {
+      if (children[i].classList.contains("node-hover-overlay")) {
+        children[i].classList.add("show");
+      }
+    }
+  }
+
+  function hoverLock(e) {
+    //console.log("lock was hovered!");
+    let me = e.target;
+    let children = me.childNodes;
+    
+    for (let i = 0; i < children.length; i++) {
+      if (children[i].classList.contains("node-hover-overlay")) {
+        children[i].classList.add("show");
+      }
+    }
+  }
+
+  function hoverKey(e) {
+    //console.log("Key was hovered!");
+    let me = e.target;
+    let children = me.childNodes;
+    
+    for (let i = 0; i < children.length; i++) {
+      if (children[i].classList.contains("node-hover-overlay")) {
+        children[i].classList.add("show");
+      }
+    }
+  }
+
+  function hoverUnreq(e) {
+    //console.log("Unreq was hovered!");
+    let me = e.target;
+    let children = me.childNodes;
+    
+    for (let i = 0; i < children.length; i++) {
+      if (children[i].classList.contains("node-hover-overlay")) {
+        children[i].classList.add("show");
+      }
+    }
+  }
+
+  function hoverOther(e) {
+    //console.log("Other was hovered!");
+    let me = e.target;
+    let children = me.childNodes;
+    
+    for (let i = 0; i < children.length; i++) {
+      if (children[i].classList.contains("node-hover-overlay")) {
+        children[i].classList.add("show");
+      }
+    }
   }
 
   function clickElevator(e) {
@@ -968,8 +1112,6 @@ let main = {};
     let result = str.match(digitPattern);
     result = parseInt(result[0]);
     let retrievedNode = findNodeById(result);
-    
-    console.log(e);
     
     if (retrievedNode === null) {
       console.error("Could not find this root!");
@@ -1016,6 +1158,47 @@ let main = {};
       animateChildren(parent.id, retrievedNode, accumulator);
       attemptVines(parent.id, retrievedNode);
     }
+  }
+  
+  function defeatBoss(e) {
+    return;
+    let parent = e.target.parentElement;
+    
+    let str = parent.id.split("_")[1];
+    let result = str.match(digitPattern);
+    result = parseInt(result[0]);
+    let retrievedNode = findNodeById(result);
+    
+    if (retrievedNode === null) {
+      console.error("Could not find this boss!");
+    }
+    
+    if (retrievedNode.isUnlocked) {
+      //console.log("lock is already broken");
+    } else {
+      //console.log("lock is still active");
+      retrievedNode.isUnlocked = true;
+      let accumulator = { val: 1 };
+      calcChildrenShift(retrievedNode, accumulator);
+      accumulator.val--;
+      ancestorsMakeRoom(parent.id, retrievedNode, accumulator);
+      accumulator = { val: 1 };
+      animateChildren(parent.id, retrievedNode, accumulator);
+      attemptVines(parent.id, retrievedNode);
+    }
+  }
+  
+  function assignKey(e) {
+    return;
+  }
+  
+  function collectKey(e) {
+    return;
+  }
+  
+  function save(e) {
+    console.log(document.cookie);
+    return;
   }
   
   //*************************************************************************************
@@ -1171,6 +1354,24 @@ let main = {};
   function doNothing() {
     //console.log("nothing doing");
   }
+
+  function expandViewbox() {
+    let mapSearch = document.getElementById("mapSVG-" + main.currentMap);
+    let str = mapSearch.attributes.viewBox.value;
+    let result = str.match(digitPattern);
+    let newStr = "" + result[0] + " " + result[1] + " ";
+    if (parseInt(result[2]) < (getCursor().x + 144)) {
+      newStr += (getCursor().x + 144 + 72);
+    } else {
+      newStr += result[2];
+    }
+    if (parseInt(result[3]) < (getCursor().y + 144)) {
+      newStr += " " + (getCursor().y + 144 + 72);
+    } else {
+      newStr += " " + result[3];
+    }
+    mapSearch.attributes.viewBox.value = newStr;
+  }
   
   function resizeCanvas() {
     let canvas = document.getElementById("background");
@@ -1183,7 +1384,7 @@ let main = {};
     }
 
     let context = canvas.getContext("2d");
-    let gridImage = document.getElementById("grid");
+    let gridImage = document.getElementById("grid_" + main.currentGame);
     let pattern = context.createPattern(gridImage, "repeat");
     context.rect(0, 0, window.innerWidth, window.innerHeight);
     context.fillStyle = pattern;
@@ -1191,26 +1392,27 @@ let main = {};
   };
 
   function debugRecursion(node) {
-    console.log("" + areaData[mapRoots[currentMap - 1].mapId].name + " #" + node.id + ": " + node.textFill);
+    console.log("" + areaData[mapRoots[main.currentMap - 1].mapId].name + " #" + node.id + ": " + node.textFill);
   }
   
   function debugTree() {
     console.log("vine cluster:: total", mapVines);
-    let saveMap = currentMap;
+    let saveMap = main.currentMap;
     for (let i = 0; i < numMapsReady; i++) {
-      currentMap = i + 1;
+      main.currentMap = i + 1;
       navigateTree(debugRecursion);
     }
-    currentMap = saveMap;
+    main.currentMap = saveMap;
     console.log("maps for", numMapsReady, "/", mapRoots.length, "areas ready");
   }
 
   function init() {
-    currentMap = 1;
+    main.currentGame = games.m; // TODO: swap games
+    main.currentMap = 1;
     makeTree();
     
     moveCursor(0, 0);
-    popMap(currentMap);
+    popMap(main.currentMap);
   }
 
   main.init = init;
@@ -1218,5 +1420,4 @@ let main = {};
   main.workingData = workingData;
   main.debugTree = debugTree;
   main.makeDependencyTree = makeDependencyTree;
-  main.treeClone = treeClone;
 })();
