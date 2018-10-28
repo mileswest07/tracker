@@ -14,5 +14,5 @@ const objColors = {
   "elevator": "ffffff",
   "BombJump": "3800a8",
   "PurpleDoor": "d82800",
-  "escape": "ffffff"
+  "escape": "402c00"
 };

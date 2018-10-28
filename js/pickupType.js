@@ -11,5 +11,7 @@ const pickupType = [
   "WaveBeam",
   "ScrewAttack",
   "KraidDefeated",
-  "RidleyDefeated"
+  "RidleyDefeated",
+  "MBDefeated",
+  "escape"
 ];

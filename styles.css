@@ -13,6 +13,14 @@ body {
 }
 
 #playground {
+  display: none;
+}
+
+.hide-map {
+  display: none;
+}
+
+.map-svg {
   overflow: hidden;
   position: absolute;
   z-index: 100;

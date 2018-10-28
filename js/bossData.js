@@ -1,4 +1,5 @@
 const bossData = [
   11,
-  12
+  12,
+  13
 ];
