@@ -6,7 +6,6 @@ let main = {};
   let mapRoots = [];
   let numMapsReady = 5;
   let digitPattern = /\d+/g;
-  let allowColors = false;
   
   const games = {
     "m": "m1",
@@ -252,6 +251,10 @@ let main = {};
     let hoverCapture = doNothing;
     let clickCapture = doNothing;
     
+    if (main.goRandom && [7, 8].includes(currentNode.type)) {
+      currentNode.type = 9;
+    }
+    
     switch(currentNode.type) {
       case 1: // starting node
         imageClass = "lock-image";
@@ -306,19 +309,24 @@ let main = {};
         clickCapture = unlock;
         break;
       case 8: // required key
-      case 9: // required key (blank)
         shapeObject = key_template.cloneNode(true);
-        groupObject.id += "key" + currentNode.id;
+        groupObject.id += "unclaimed-key" + currentNode.id;
         imageClass = "key-image";
         fillColor = "#"+ objColors[pickupType[currentNode.pickupType]];
         hoverShape = key_template.cloneNode(true);
         hoverShape.removeAttribute("id");
         hoverCapture = hoverKey;
-        if (currentNode.type === 9) {
-          clickCapture = assignKey;
-        } else {
-          clickCapture = collectKey;
-        }
+        clickCapture = assignKey;
+        break;
+      case 9: // required key (blank)
+        shapeObject = key_template.cloneNode(true);
+        groupObject.id += "unclaimed-key" + currentNode.id;
+        imageClass = "blank-key"; // needs to be visible
+        fillColor = "white";
+        hoverShape = key_template.cloneNode(true);
+        hoverShape.removeAttribute("id");
+        hoverCapture = hoverKey;
+        clickCapture = assignKey;
         break;
       case 4: // save room
       case 7: // unrequired key
@@ -353,7 +361,7 @@ let main = {};
           hoverShape = arrow_right_template.cloneNode(true);
         }
         groupObject.id += "oneway" + currentNode.id;
-        if (allowColors) {
+        if (main.allowColors) {
           fillColor = "#"+ areaData[currentNode.mapId].color;
         } else {
           fillColor = "white";
@@ -398,14 +406,19 @@ let main = {};
       // pull the right image from the repo
       imageObject = document.createElementNS("http://www.w3.org/2000/svg", "image");
       imageObject.classList.add(imageClass);
-      imageObject.setAttributeNS("http://www.w3.org/1999/xlink", "href", "images/icons/" + currentNode.image + ".png");
+      if (currentNode.type !== 9) {
+        imageObject.setAttributeNS("http://www.w3.org/1999/xlink", "href", "images/icons/" + currentNode.image + ".png");
+      } else {
+        imageObject.setAttributeNS("http://www.w3.org/1999/xlink", "href", "images/icons/itemSphere.png");
+      }
+      
       imageObject.setAttribute("width", "80px");
       imageObject.setAttribute("height", "80px");
       imageObject.setAttribute("x", "-40");
       imageObject.setAttribute("y", "-40");
     }
     
-    if (textObject && imageObject) {
+    if (textObject && imageObject && currentNode.type !== 9) {
       if ([7, 8].includes(currentNode.type)) { // for keys
         textObject.setAttribute("fill", "white");
       } else {
@@ -447,7 +460,7 @@ let main = {};
       } else {
         arrowFill = areaData[currentNode.mapId].color;
       }
-      if (allowColors) {
+      if (main.allowColors) {
         escapeArrow.setAttribute("fill", "#"+ arrowFill);
       }
       let lastLine;
@@ -477,7 +490,7 @@ let main = {};
       newGradient.appendChild(stop1);
       newGradient.appendChild(stop2);
       getCurrentMapElement("defs").appendChild(newGradient);
-      if (allowColors) {
+      if (main.allowColors) {
         lastLine.children[0].setAttribute("fill", "url(#" + newGradient.id + ")");
       }
       groupObject.appendChild(escapeArrow);
@@ -557,7 +570,7 @@ let main = {};
     } else {
       shapeObject.setAttribute("transform", "translate(" + getCursor().x + " " + getCursor().y + ")");
     }
-    if (allowColors) {
+    if (main.allowColors) {
       shapeObject.setAttribute("fill", "#"+ areaData[mapRoots[main.currentMap - 1].mapId].color);
     }
     
@@ -591,7 +604,7 @@ let main = {};
     } else {
       copy.setAttribute("transform", "translate(" + getCursor().x + " " + getCursor().y + ")");
     }
-    if (allowColors) {
+    if (main.allowColors) {
       copy.children[0].setAttribute("fill", "#"+ areaData[mapRoots[main.currentMap - 1].mapId].color);
     }
     
@@ -754,28 +767,30 @@ let main = {};
   }
   
   function createCousinVine(elementId, destinationRaw) {
-    let destinationId = "";
+    let destinationId = "mapSVG-" + main.currentMap;
     
     switch (destinationRaw.type) {
       case 3: 
       case 2: 
       case 1: 
-        destinationId = "mapSVG-" + main.currentMap + "_goal" + destinationRaw.id;
+        destinationId += "_goal" + destinationRaw.id;
         break;
       case 5: 
-        destinationId = "mapSVG-" + main.currentMap + "_lock" + destinationRaw.id;
+        destinationId += "_lock" + destinationRaw.id;
         break;
       case 8: 
+        break;
+        destinationId += "_key" + destinationRaw.id;
       case 9: 
-        destinationId = "mapSVG-" + main.currentMap + "_key" + destinationRaw.id;
+        destinationId += "_unclaimed-key" + destinationRaw.id;
         break;
       case 4: 
       case 7: 
       case 10: 
-        destinationId = "mapSVG-" + main.currentMap + "_unreq" + destinationRaw.id;
+        destinationId += "_unreq" + destinationRaw.id;
         break;
       case 6: 
-        destinationId = "mapSVG-" + main.currentMap + "_oneway" + destinationRaw.id;
+        destinationId += "_oneway" + destinationRaw.id;
         break;
     }
     let dest = document.getElementById(destinationId);
@@ -1409,6 +1424,8 @@ let main = {};
   function init() {
     main.currentGame = games.m; // TODO: swap games
     main.currentMap = 1;
+    main.goRandom = false;
+    main.allowColors = false;
     makeTree();
     
     moveCursor(0, 0);
