@@ -7,5 +7,7 @@ const iconType = {
   "arrow_up": 5,
   "arrow_down": 6,
   "arrow_left": 7,
-  "arrow_right": 8
+  "arrow_right": 8,
+  "pentagon": 9,
+  "hexagon": 10
 };

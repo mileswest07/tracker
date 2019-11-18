@@ -9,5 +9,7 @@ const nodeType = {
   "unreq": 7,
   "key": 8,
   "empty": 9,
-  "other": 10
+  "other": 10,
+  "slot": 11,
+  "access": 12
 };

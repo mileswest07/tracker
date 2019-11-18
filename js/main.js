@@ -406,16 +406,25 @@ let main = {};
       // pull the right image from the repo
       imageObject = document.createElementNS("http://www.w3.org/2000/svg", "image");
       imageObject.classList.add(imageClass);
-      if (currentNode.type !== 9) {
+      if (currentNode.type !== 9 && currentNode.type !== 3) {
         imageObject.setAttributeNS("http://www.w3.org/1999/xlink", "href", "images/icons/" + currentNode.image + ".png");
+        imageObject.setAttribute("width", "42px");
+        imageObject.setAttribute("height", "42px");
+        imageObject.setAttribute("x", "-21");
+        imageObject.setAttribute("y", "-21");
+      } else if (currentNode.type === 3) { // TODO: figure things out for boss images
+        imageObject.setAttributeNS("http://www.w3.org/1999/xlink", "href", "images/icons/" + currentNode.image + ".png");
+        imageObject.setAttribute("width", "80px");
+        imageObject.setAttribute("height", "80px");
+        imageObject.setAttribute("x", "-40");
+        imageObject.setAttribute("y", "-40");
       } else {
         imageObject.setAttributeNS("http://www.w3.org/1999/xlink", "href", "images/icons/itemSphere.png");
+        imageObject.setAttribute("width", "42px");
+        imageObject.setAttribute("height", "42px");
+        imageObject.setAttribute("x", "-21");
+        imageObject.setAttribute("y", "-21");
       }
-      
-      imageObject.setAttribute("width", "80px");
-      imageObject.setAttribute("height", "80px");
-      imageObject.setAttribute("x", "-40");
-      imageObject.setAttribute("y", "-40");
     }
     
     if (textObject && imageObject && currentNode.type !== 9) {
