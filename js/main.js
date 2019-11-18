@@ -308,6 +308,17 @@ let main = {};
         hoverCapture = hoverLock;
         clickCapture = unlock;
         break;
+      case 5: // access
+        shapeObject = access_template.cloneNode(true);
+        groupObject.id += "access" + currentNode.id;
+        imageClass = "lock-image";
+        fillColor = "#"+ objColors[pickupType[currentNode.pickupType]];
+        groupObject.setAttribute("isUnlocked", "false");
+        hoverShape = access_template.cloneNode(true);
+        hoverShape.removeAttribute("id");
+        hoverCapture = hoverLock;
+        clickCapture = unlock;
+        break;
       case 8: // required key
         shapeObject = key_template.cloneNode(true);
         groupObject.id += "unclaimed-key" + currentNode.id;
@@ -345,6 +356,16 @@ let main = {};
         } else {
           clickCapture = doNothing;
         }
+        break;
+      case 11: // slot node
+        shapeObject = slot_template.cloneNode(true);
+        groupObject.id += "slot" + currentNode.id;
+        imageClass = "key-image";
+        fillColor = "#"+ objColors[pickupType[currentNode.pickupType]];
+        hoverShape = slot_template.cloneNode(true);
+        hoverShape.removeAttribute("id");
+        hoverCapture = hoverKey;
+        clickCapture = assignKey;
         break;
       case 6: // one-way arrow
         if (currentNode.textFill === "up") {
@@ -406,20 +427,19 @@ let main = {};
       // pull the right image from the repo
       imageObject = document.createElementNS("http://www.w3.org/2000/svg", "image");
       imageObject.classList.add(imageClass);
-      if (currentNode.type !== 9 && currentNode.type !== 3) {
-        imageObject.setAttributeNS("http://www.w3.org/1999/xlink", "href", "images/icons/" + currentNode.image + ".png");
-        imageObject.setAttribute("width", "42px");
-        imageObject.setAttribute("height", "42px");
-        imageObject.setAttribute("x", "-21");
-        imageObject.setAttribute("y", "-21");
-      } else if (currentNode.type === 3) { // TODO: figure things out for boss images
+      if (bossData.includes(currentNode.pickupType)) {
         imageObject.setAttributeNS("http://www.w3.org/1999/xlink", "href", "images/icons/" + currentNode.image + ".png");
         imageObject.setAttribute("width", "80px");
         imageObject.setAttribute("height", "80px");
         imageObject.setAttribute("x", "-40");
         imageObject.setAttribute("y", "-40");
       } else {
-        imageObject.setAttributeNS("http://www.w3.org/1999/xlink", "href", "images/icons/itemSphere.png");
+        if (currentNode.type === 9) {
+          imageObject.setAttributeNS("http://www.w3.org/1999/xlink", "href", "images/icons/itemSphere.png");
+        } else {
+          imageObject.setAttributeNS("http://www.w3.org/1999/xlink", "href", "images/icons/" + currentNode.image + ".png");
+        }
+        
         imageObject.setAttribute("width", "42px");
         imageObject.setAttribute("height", "42px");
         imageObject.setAttribute("x", "-21");

@@ -12,7 +12,5 @@ const objColors = {
   "ScrewAttack": "69cd69",
   "boss": "747474",
   "elevator": "ffffff",
-  "BombJump": "3800a8",
-  "PurpleDoor": "d82800",
-  "escape": "402c00"
+  "escape": "ffffff"
 };

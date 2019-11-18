@@ -81,6 +81,9 @@ body {
 #unreq_template {
   display: none;
 }
+#slot_template {
+  display: none;
+}
 #junction_template {
   display: none;
 }
