@@ -6,6 +6,7 @@ let main = {};
   let mapRoots = [];
   let numMapsReady = 5;
   let digitPattern = /\d+/g;
+  let numGradsAlready = 0;
   
   const games = {
     "m": "m1",
@@ -29,11 +30,12 @@ let main = {};
 
   let mapVines = [];
   
+  // hide map panel
   function hideMap(mapId) {
     let mapSearch = document.getElementById("mapSVG-" + mapId);
-    if (mapSearch !== null) {
+    if (mapSearch !== null) { // so long as the map panel exists (has been created)
       // hide current map
-      if (mapSearch.classList) {
+      if (mapSearch.classList) { // browser compatibility logic
         mapSearch.classList.add("hide-map");
       } else {
         let arr = mapSearch.className.split(" ");
@@ -44,11 +46,12 @@ let main = {};
     }
   }
   
+  // show map panel
   function showMap(mapId) {
     let mapSearch = document.getElementById("mapSVG-" + mapId);
-    if (mapSearch !== null) {
+    if (mapSearch !== null) { // so long as the map panel exists (has been created)
       // show current map
-      if (mapSearch.classList) {
+      if (mapSearch.classList) { // browser compatibility logic
         mapSearch.classList.remove("hide-map");
       } else {
         mapSearch.className += mapSearch.className.replace(/\bhide-map\b/g);
@@ -56,20 +59,21 @@ let main = {};
     }
   }
   
+  // display map based on input parameter
+  // NOW we're working with visuals!
   function popMap(mapId) {
-    let mapSource = document.getElementById("mainground");
-    let mapSearch = document.getElementById("mapSVG-" + mapId);
-    // hide current map
-    hideMap(main.currentMap);
-    main.currentMap = mapId;
-    if (mapSearch === null) {
-      // create new map
-      mapSearch = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    let mapSource = document.getElementById("mainground"); // main display for where the current map is to be shown
+    let mapSearch = document.getElementById("mapSVG-" + mapId); // grab the correct map panel
+    hideMap(main.currentMap); // hide current map while we work behind the scenes
+    main.currentMap = mapId; // set current map to the new map panel
+    if (mapSearch === null) { // if the map hasn't been made, then let's make it
+      // TODO: this could all be done more cleanly...
+      mapSearch = document.createElementNS("http://www.w3.org/2000/svg", "svg"); // create SVG container
       mapSearch.setAttribute("id", "mapSVG-" + main.currentMap);
       mapSearch.setAttribute("class", "map-svg");
       mapSearch.setAttribute("width", "100%");
       mapSearch.setAttribute("height", "100%");
-      mapSearch.setAttribute("viewBox", "0 0 432 432");
+      mapSearch.setAttribute("viewBox", "0 0 432 432"); // 3 x 3 map for a default size
       mapSearch.setAttribute("xmlns", "http://www.w3.org/2000/svg");
       mapSearch.setAttributeNS("http://www.w3.org/2000/svg", "xlink", "http://www.w3.org/1999/xlink");
       
@@ -87,15 +91,17 @@ let main = {};
       mapSearch.appendChild(mainMeat);
       mapSource.appendChild(mapSearch);
       
+      // create map panel root/starting node
       let newNode = makeNode(mapRoots[main.currentMap - 1], 0, 0);
-      if (main.currentMap !== 1) {
-        mapRoots[main.currentMap - 1].expanded = true;
-        animateChildren(newNode.id, mapRoots[main.currentMap - 1], { val: 1 });
+      if (main.currentMap !== 1) { // for anything besides the starting map, to make sure the START node will have interactivity
+        mapRoots[main.currentMap - 1].expanded = true; // for all non-first maps, expand the map
+        animateChildren(newNode.id, mapRoots[main.currentMap - 1], { val: 1 }); // and display all nodes as possible
       }
-    } else {
+    } else { // if map has already been created
       // move next map to front
       showMap(main.currentMap);
     }
+    // with the map shown, reset cursor to the root/starting node
     moveCursor(0, 0);
   }
   
@@ -125,66 +131,78 @@ let main = {};
     return returnValue;
   }
 
+  // obtain list of all children to current node
   function listConnections(currentNode) {
     return workingData.filter(node => node.parentId === currentNode.id);
   }
 
+  // for each node in the map
   function recursionA(currentNode, mapNodes) {
     if (!currentNode.hasOwnProperty("children")) {
-      currentNode.children = [];
+      currentNode.children = []; // create children list for each node
     }
-    let candidates = listConnections(currentNode);
+    let candidates = listConnections(currentNode); // obtain all children to current node
+    // cycle through all children
     for (let i = 0; i < candidates.length; i++) {
       if (!candidates[i].hasOwnProperty("parents")) {
-        candidates[i].parents = [];
+        candidates[i].parents = []; // allow children to have multiple parents for multiple paths
       }
-      candidates[i].parents.push(currentNode);
+      candidates[i].parents.push(currentNode); // add current node to child's parent list
       
+      // for cases when a connection needs to be made to another part of the map without children to create that connection
       if (candidates[i].cousinsTo && Array.isArray(candidates[i].cousinsTo) && candidates[i].cousinsTo.length > 0) {
         if (!(mapVines[currentNode.mapId - 1] && Array.isArray(mapVines[currentNode.mapId - 1]) && mapVines[currentNode.mapId - 1].length > 0)) {
-          mapVines[currentNode.mapId - 1] = [];
+          mapVines[currentNode.mapId - 1] = []; // create a "vine" connection
         }
-        let newArray = [candidates[i].id, ...candidates[i].cousinsTo];
-        let newerArray = newArray.sort();
+        let newArray = [candidates[i].id, ...candidates[i].cousinsTo]; // create vine connecting current child to its cousins, by node ID
+        let newerArray = newArray.sort(); // sort by ID, earliest first
         
-        let notFound = true;
+        // search to make sure new vine is not a duplicate
+        let notFound = true; // flag for determining duplication
         for (let j = 0; j < mapVines[currentNode.mapId - 1].length; j++) {
           let cluster = mapVines[currentNode.mapId - 1][j];
-          if (cluster.length !== newerArray.length) {
+          if (cluster.length !== newerArray.length) { // if vines are not the same length, ignore it and move to the next; can't be duplicate
             continue;
           }
-          let lengthMatches = 0;
+          // if we get here, then we found a potential match just based on the length of the vine
+          let lengthMatches = 0; // counter for matching IDs in that vine
           for (let k = 0; k < cluster.length; k++) {
-            if (cluster[k] === newerArray[k]) {
-              lengthMatches++;
+            if (cluster[k] === newerArray[k]) { // matching IDs
+              lengthMatches++; // if there's an ID match, then increase the counter
             }
           }
-          if (lengthMatches === newerArray.length) {
+          if (lengthMatches === newerArray.length) { // if the counter of correct matches matches the whole length of the vine, then it's a verified duplicate
             notFound = false;
           }
+          // otherwise it's not a match, ignore and move to the next possible vine
         }
-        if (notFound) {
+        if (notFound) { // if after all that, the would-be vine is not a duplicate, then add it to the array of vines, for good
           mapVines[currentNode.mapId - 1].push(newerArray);
         }
       }
       
+      // now add this node to the list of checked-off map nodes, to prevent infinite or loop recursion
       if (mapNodes[candidates[i].id] !== true) {
-        currentNode.children.push(candidates[i]);
-        mapNodes[candidates[i].id] = true;
-        recursionA(candidates[i], mapNodes);
+        currentNode.children.push(candidates[i]); // add child to the parent's list of children
+        mapNodes[candidates[i].id] = true; // add to checklist
+        recursionA(candidates[i], mapNodes); // move to first child and repeat this function
+        // based on this motion, all firstborn children (going down all generations) get processed first, before the last generations's firstborn passes the torch to its sibling.
+        // Once all siblings of a generation are complete, then the torch is passed back to the parent, and its next sibling is processed.
       }
     }
   }
 
   function makeTree() {
+    // get all starting points for each map
     mapRoots = workingData.filter(node => node.type === nodeType.start);
-    root = mapRoots[0];
+    root = mapRoots[0]; // grab starting map as root of all maps
     
     for (let i = 0; i < mapRoots.length; i++) {
-      let mapNodes = {};
-      let currentNode = mapRoots[i];
-      recursionA(currentNode, mapNodes);
+      let mapNodes = {}; // checklist for each node in the game
+      let currentNode = mapRoots[i]; // start at map node
+      recursionA(currentNode, mapNodes); // cycle through for each node starting at map node
     }
+    console.log(mapRoots);
   }
 
   function recursionB(currentNode, predicate) {
@@ -238,260 +256,324 @@ let main = {};
     return returnValue;
   }
 
+  // creation of a node
   function makeNode(currentNode, x, y) {
-    let shapeEnum = 0;
-    let shapeObject = null;
-    let hoverShape = null;
+    let shapeEnum = 0; // catch
+    let shapeObject = null; // capture the shape DOM element
+    let hoverShape = null; // and the hovering overlay
     let groupObject = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    groupObject.id = "mapSVG-" + main.currentMap + "_";
-    let imageClass = null;
-    let fillColor = "white";
-    let titleText = ""; // todo: apply property to each category
+    groupObject.id = "mapSVG-" + main.currentMap + "_"; // this will be the ID that captures this node
+    let imageClass = null; // image that will appear in the node
+    let fillColor = "white"; // default fill: white
+    let titleText = "";
     
-    let hoverCapture = doNothing;
-    let clickCapture = doNothing;
+    let hoverCapture = doNothing; // when hovering
+    let clickCapture = doNothing; // when clicking, without the hovering overlay OR on touchscreen
     
+    // in randomized mode, all keys are possibly required or unrequired, but we won't know until the key is collected
     if (main.goRandom && [7, 8].includes(currentNode.type)) {
       currentNode.type = 9;
     }
     
+    // do different things based on the node type
     switch(currentNode.type) {
       case 1: // starting node
-        imageClass = "lock-image";
-        shapeObject = goal_template.cloneNode(true);
-        groupObject.id += "goal" + currentNode.id;
-        fillColor = "white";
-        hoverShape = goal_template.cloneNode(true);
-        hoverShape.removeAttribute("id");
-        hoverCapture = hoverRoot;
-        clickCapture = clickRoot;
+      case 14: // another node, "other" but circle
+        groupObject.id += "goal" + currentNode.id; // add specific data about node to ID
+        shapeObject = goal_template.cloneNode(true); // circle
+        hoverShape = goal_template.cloneNode(true); // circle
+        imageClass = ""; // no image needed, so no special effects needed
+        if (currentNode.type === 1) { // starting point
+          hoverCapture = hoverRoot; // assign hover method
+          clickCapture = clickRoot; // assign click method
+          if (root.id !== currentNode.id) { // if this isn't the root of all maps
+            titleText = areaData[workingData.find(n => n.id === currentNode.pointsToElevatorId).mapId].name.toUpperCase(); // display destination name
+          } else {
+            titleText = "START"; // standard title text
+          }
+        } else {
+          hoverCapture = doNothing; // assign hover method
+          clickCapture = doNothing; // assign click method
+        }
+        break;
+      case 13: // ending node
+        groupObject.id += "end" + currentNode.id; // add specific data about node to ID
+        shapeObject = end_template.cloneNode(true); // circle
+        hoverShape = end_template.cloneNode(true); // circles
+        imageClass = ""; // no image needed, so no special effects needed
+        hoverCapture = doNothing; // assign hover method
+        clickCapture = doNothing; // assign click method
+        titleText = "END"; // standard title text
         break;
       case 2: // elevator access
-        imageClass = "lock-image";
-        shapeObject = goal_template.cloneNode(true);
-        groupObject.id += "goal" + currentNode.id;
-        if (currentNode.pickupType !== 0) {
-          fillColor = "#" + objColors[pickupType[currentNode.pickupType]];
-          hoverCapture = hoverElevator2;
-          clickCapture = doNothing;
-        } else {
-          fillColor = "#" + objColors.elevator;
-          hoverCapture = hoverElevator;
-          clickCapture = clickElevator;
-        }
-        hoverShape = goal_template.cloneNode(true);
-        hoverShape.removeAttribute("id");
+        groupObject.id += "goal" + currentNode.id; // add specific data about node to ID
+        shapeObject = goal_template.cloneNode(true); // circle
+        hoverShape = goal_template.cloneNode(true); // circle
+        imageClass = ""; // no image needed, so no special effects needed
+        hoverCapture = hoverElevator; // assign hover method
+        clickCapture = clickElevator; // assign click method
+        // if not yet implemented
+        if (currentNode.pointsToElevatorId !== -1) {
+          console.log(currentNode);
+          titleText = areaData[workingData.find(n => n.id === currentNode.pointsToElevatorId).mapId].name.toUpperCase(); // display destination name
+          fillColor = "#" + areaData[workingData.find(n => n.id === currentNode.pointsToElevatorId).mapId].color; // get color of target elevator
+        }// otherwise, fall back onto the data-given label
         break;
       case 3: // boss battle
-        imageClass = "boss-image";
-        shapeObject = goal_template.cloneNode(true);
-        groupObject.id += "goal" + currentNode.id;
-        fillColor = "#" + objColors.boss;
-        hoverShape = goal_template.cloneNode(true);
-        hoverShape.removeAttribute("id");
-        hoverCapture = hoverBoss;
-        clickCapture = defeatBoss;
+        groupObject.id += "goal" + currentNode.id; // add specific data about node to ID
+        shapeObject = goal_template.cloneNode(true); // circle
+        hoverShape = goal_template.cloneNode(true); // circle
+        imageClass = "boss-image"; // image might be needed; if so, no filters to be applied
+        fillColor = "#" + objColors.boss; // default boss/battle color
+        hoverCapture = hoverBoss; // assign hover method
+        clickCapture = defeatBoss; // assign click method
         break;
       case 5: // lock
-        shapeObject = lock_template.cloneNode(true);
-        groupObject.id += "lock" + currentNode.id;
-        if (bossData.includes(currentNode.pickupType)) {
-          imageClass = "boss-lock-image";
-          fillColor = "#"+ objColors.boss;
+        groupObject.id += "lock" + currentNode.id; // add specific data about node to ID
+        shapeObject = lock_template.cloneNode(true); // square
+        hoverShape = lock_template.cloneNode(true); // square
+        // if the lock is a boss
+        if (bossData.includes(currentNode.pickupType)) { // match against boss lock type
+          imageClass = "boss-lock-image"; // grayscale the image
+          fillColor = "#"+ objColors.boss; // default boss/battle color
         } else {
-          imageClass = "lock-image";
-          fillColor = "#"+ objColors[pickupType[currentNode.pickupType]];
+          imageClass = "lock-image"; // otherwise apply MULTIPLY to the item image
+          fillColor = "#"+ objColors[pickupType[currentNode.pickupType]]; // grab the background color
+          // if the lock is not an item lock, then the fillColor should be white
         }
-        groupObject.setAttribute("isUnlocked", "false");
-        hoverShape = lock_template.cloneNode(true);
-        hoverShape.removeAttribute("id");
-        hoverCapture = hoverLock;
-        clickCapture = unlock;
+        groupObject.setAttribute("isUnlocked", "false"); // make sure the rest of the map doesn't display, yet
+        hoverCapture = hoverLock; // assign hover method
+        clickCapture = unlock; // assign click method
         break;
-      case 5: // access
-        shapeObject = access_template.cloneNode(true);
-        groupObject.id += "access" + currentNode.id;
-        imageClass = "lock-image";
-        fillColor = "#"+ objColors[pickupType[currentNode.pickupType]];
-        groupObject.setAttribute("isUnlocked", "false");
-        hoverShape = access_template.cloneNode(true);
-        hoverShape.removeAttribute("id");
-        hoverCapture = hoverLock;
-        clickCapture = unlock;
+      case 12: // access
+        groupObject.id += "access" + currentNode.id; // add specific data about node to ID
+        shapeObject = access_template.cloneNode(true); // hexagon
+        hoverShape = access_template.cloneNode(true); // hexagon
+        imageClass = "lock-image"; // apply MULTIPLY
+        fillColor = "#"+ objColors[pickupType[currentNode.pickupType]]; // grab the background color
+        groupObject.setAttribute("isUnlocked", "false"); // make sure the rest of the map doesn't display, yet
+        hoverCapture = hoverLock; // assign hover method
+        clickCapture = unlock; // assign click method
         break;
       case 8: // required key
-        shapeObject = key_template.cloneNode(true);
-        groupObject.id += "unclaimed-key" + currentNode.id;
-        imageClass = "key-image";
-        fillColor = "#"+ objColors[pickupType[currentNode.pickupType]];
-        hoverShape = key_template.cloneNode(true);
-        hoverShape.removeAttribute("id");
-        hoverCapture = hoverKey;
-        clickCapture = assignKey;
+        groupObject.id += "unclaimed-key" + currentNode.id; // add specific data about node to ID
+        shapeObject = key_template.cloneNode(true); // diamond
+        hoverShape = key_template.cloneNode(true); // diamond
+        imageClass = "key-image"; // apply SCREEN
+        fillColor = "#"+ objColors[pickupType[currentNode.pickupType]]; // grab the background color
+        hoverCapture = hoverKey; // assign hover method
+        clickCapture = assignKey; // assign click method
         break;
       case 9: // required key (blank)
-        shapeObject = key_template.cloneNode(true);
-        groupObject.id += "unclaimed-key" + currentNode.id;
-        imageClass = "blank-key"; // needs to be visible
-        fillColor = "white";
-        hoverShape = key_template.cloneNode(true);
-        hoverShape.removeAttribute("id");
-        hoverCapture = hoverKey;
-        clickCapture = assignKey;
+        groupObject.id += "unclaimed-key" + currentNode.id; // add specific data about node to ID
+        shapeObject = key_template.cloneNode(true); // diamond
+        hoverShape = key_template.cloneNode(true); // diamond
+        imageClass = "blank-key"; // needs to be visible, so don't apply anything
+        hoverCapture = hoverKey; // assign hover method
+        clickCapture = assignKey; // assign click method
         break;
       case 4: // save room
       case 7: // unrequired key
-      case 10: // other node
-        shapeObject = unreq_template.cloneNode(true);
-        groupObject.id += "unreq" + currentNode.id;
-        imageClass = "key-image";
-        fillColor = "#"+ objColors[pickupType[currentNode.pickupType]];
-        hoverShape = unreq_template.cloneNode(true);
-        hoverShape.removeAttribute("id");
-        hoverCapture = hoverUnreq;
-        if (currentNode.type === 4) {
-          clickCapture = save;
-        } else if (currentNode.type === 7) {
-          clickCapture = collectKey;
-        } else {
-          clickCapture = doNothing;
+      case 10: // other node, "other" but wedge
+        groupObject.id += "unreq" + currentNode.id; // add specific data about node to ID
+        shapeObject = unreq_template.cloneNode(true); // wedge
+        hoverShape = unreq_template.cloneNode(true); // wedge
+        imageClass = "key-image"; // apply SCREEN
+        fillColor = "#"+ objColors[pickupType[currentNode.pickupType]]; // grab the background color
+        // non-item nodes like save rooms and maps, display as on a white background
+        if (currentNode.type === 4) { // save room
+          hoverCapture = hoverSave; // assign hover method
+          clickCapture = save; // assign click method
+        } else if (currentNode.type === 7) { // unrequired key
+          hoverCapture = hoverUnreq; // assign hover method
+          clickCapture = collectKey; // assign click method
+        } else { // other node
+          hoverCapture = doNothing; // assign hover method
+          clickCapture = doNothing; // assign click method
         }
         break;
       case 11: // slot node
-        shapeObject = slot_template.cloneNode(true);
-        groupObject.id += "slot" + currentNode.id;
-        imageClass = "key-image";
-        fillColor = "#"+ objColors[pickupType[currentNode.pickupType]];
-        hoverShape = slot_template.cloneNode(true);
-        hoverShape.removeAttribute("id");
-        hoverCapture = hoverKey;
-        clickCapture = assignKey;
+        groupObject.id += "slot" + currentNode.id; // add specific data about node to ID
+        shapeObject = slot_template.cloneNode(true); // pentagon
+        hoverShape = slot_template.cloneNode(true); // pentagon
+        imageClass = "key-image"; // apply SCREEN
+        fillColor = "#"+ objColors[pickupType[currentNode.pickupType]]; // grab the background color
+        hoverCapture = hoverKey; // assign hover method
+        clickCapture = assignKey; // assign click method
         break;
       case 6: // one-way arrow
-        if (currentNode.textFill === "up") {
+        groupObject.id += "oneway" + currentNode.id; // add specific data about node to ID
+        // to save on space, we are going to use the "textFill" property to determine the direction for our one-way arrows
+        if (currentNode.textFill === "up") { // up
           shapeObject = arrow_up_template.cloneNode(true);
           hoverShape = arrow_up_template.cloneNode(true);
-        } else if (currentNode.textFill === "down") {
+        } else if (currentNode.textFill === "down") { // down
           shapeObject = arrow_down_template.cloneNode(true);
           hoverShape = arrow_down_template.cloneNode(true);
-        } else if (currentNode.textFill === "left") {
+        } else if (currentNode.textFill === "left") { // left
           shapeObject = arrow_left_template.cloneNode(true);
           hoverShape = arrow_left_template.cloneNode(true);
-        } else {
+        } else { // right
           shapeObject = arrow_right_template.cloneNode(true);
           hoverShape = arrow_right_template.cloneNode(true);
         }
-        groupObject.id += "oneway" + currentNode.id;
-        if (main.allowColors) {
-          fillColor = "#"+ areaData[currentNode.mapId].color;
-        } else {
-          fillColor = "white";
-        }
-        hoverShape.removeAttribute("id");
-        hoverCapture = hoverOther;
-        clickCapture = doNothing;
+        fillColor = "#"+ areaData[currentNode.mapId].color; // get color of this map
+        hoverCapture = hoverOther; // assign hover method
+        clickCapture = doNothing; // assign click method
         break;
-      case 0: 
-      default: 
-        shapeEnum = iconType.none;
-        fillColor = "white";
+      case 0:
+      default:
+        shapeEnum = iconType.none; // in case all fails, we need a catch-all
     }
     
-    shapeObject.setAttribute("fill", fillColor);
+    hoverShape.removeAttribute("id"); // remove ID from hover shape, otherwise there will be a duplicate ID
     
-    shapeObject.removeAttribute("id");
-    groupObject.appendChild(shapeObject);
+    fillColor = main.allowColors ? fillColor : "white"; // colorblind option
+    shapeObject.setAttribute("fill", fillColor); // finally attach the color option to the shape
     
-    let textObject = null;
+    shapeObject.removeAttribute("id"); // remove ID from shape object, otherwise there will be a duplicate ID
+    groupObject.appendChild(shapeObject); // attach shape to the <g>; this must be on the bottom of everything
     
-    if ((currentNode.textFill.length > 0 || (currentNode.numReqd > 1)) && currentNode.type !== 6) {
+    // now let's create the text to go inside of the shape
+    let textObject = null; // container object
+    // if we already have the text populated
+    // or the text has yet to be populated
+    // or we have to mark that a certain number of keys are needed
+    // so long as the current node is not an arrow (we're ignoring this value because of directions)
+    if (titleText.length !== 0 || (currentNode.textFill.length > 0 || (currentNode.numReqd > 1)) && currentNode.type !== 6) {
       textObject = document.createElementNS("http://www.w3.org/2000/svg", "text");
       textObject.classList.add("text-node");
+      // TODO: variable text length, both based on rawData input options, and dynamic textarea filling from the SVG library
       textObject.setAttribute("x", "0");
-      textObject.setAttribute("y", "9");
+      textObject.setAttribute("y", "9"); // slight vertical offset
       textObject.setAttribute("fill", "black");
-      textObject.setAttribute("text-anchor", "middle");
+      textObject.setAttribute("text-anchor", "middle"); // centered
       
-      if (currentNode.numReqd > 1) {
+      if (titleText.length !== 0) { // if we already have text set, based on earlier code
+        textObject.innerHTML = titleText;
+      } else if (currentNode.numReqd > 1 && (currentNode.type === 5 || currentNode.type === 12)) { // display required value
+        textObject.classList.add("required-text"); // apply the right style
         textObject.innerHTML = "Required: " + currentNode.numReqd;
-      } else if (currentNode.type === 4) {
+      } else if (currentNode.numReqd > 1) { // display required value
+        textObject.classList.add("required-text"); // apply the right style
+        textObject.setAttribute("y", "0"); // no vertical offset
+        textObject.innerHTML = "x" + currentNode.numReqd;
+      } else if (currentNode.type === 4) { // for save rooms, just display the giant S
+        textObject.classList.add("save-text"); // apply the right style
+        textObject.setAttribute("y", "0"); // no vertical offset
         textObject.innerHTML = "S";
       } else {
         textObject.innerHTML = currentNode.textFill;
       }
     }
     
+    // now let's create the image to go inside the shape
     let imageObject = null;
-    
+     // if you have an image applied in the RawData
     if (currentNode.image.length > 0) {
-      // pull the right image from the repo
       imageObject = document.createElementNS("http://www.w3.org/2000/svg", "image");
-      imageObject.classList.add(imageClass);
-      if (bossData.includes(currentNode.pickupType)) {
-        imageObject.setAttributeNS("http://www.w3.org/1999/xlink", "href", "images/icons/" + currentNode.image + ".png");
-        imageObject.setAttribute("width", "80px");
+      imageClass = main.allowColors ? imageClass : "color-blind-image"; // apply filtered image OR color-blind one
+      imageObject.classList.add(imageClass); // apply the class
+      if (bossData.includes(currentNode.pickupType)) { // if this is a boss image, then we need to apply different logic
+        imageObject.setAttributeNS("http://www.w3.org/1999/xlink", "href", "images/icons/" + currentNode.image + ".png"); // grab the boss image
+        imageObject.setAttribute("width", "80px"); // larger size
         imageObject.setAttribute("height", "80px");
         imageObject.setAttribute("x", "-40");
         imageObject.setAttribute("y", "-40");
       } else {
-        if (currentNode.type === 9) {
+        if (currentNode.type === 9) { // if we're doing randomized mode and each item is hidden, display item spheres instead
           imageObject.setAttributeNS("http://www.w3.org/1999/xlink", "href", "images/icons/itemSphere.png");
-        } else {
+        } else { // otherwise, just display the item image
           imageObject.setAttributeNS("http://www.w3.org/1999/xlink", "href", "images/icons/" + currentNode.image + ".png");
         }
         
-        imageObject.setAttribute("width", "42px");
+        imageObject.setAttribute("width", "42px"); // each image should be 42x42
         imageObject.setAttribute("height", "42px");
         imageObject.setAttribute("x", "-21");
         imageObject.setAttribute("y", "-21");
       }
     }
     
-    if (textObject && imageObject && currentNode.type !== 9) {
+    // now based on the existence of a text and an image, we need to apply them to the group, with appropriate spacing
+    if (textObject && imageObject && currentNode.type !== 9) { // for every shape where we have and image and text that ISN'T an "empty" node type
       if ([7, 8].includes(currentNode.type)) { // for keys
         textObject.setAttribute("fill", "white");
-      } else {
+      } else { // this should apply for all other shape types
         textObject.setAttribute("fill", "black");
       }
-      if (currentNode.children.length === 0 && !(currentNode.parentId.length > 1)) {
-        textObject.setAttribute("y", "81");
-      } else {
-        imageObject.setAttribute("y", "-48");
-        textObject.setAttribute("y", "29");
-      }
+      imageObject.setAttribute("y", "-48"); // offset image to be higher
+      textObject.setAttribute("y", "29"); // offset text to be lower
+      groupObject.appendChild(imageObject); // then add to the group
+      groupObject.appendChild(textObject); // in the right order
+    } else if (imageObject) { // no text, just apply image with current offset
       groupObject.appendChild(imageObject);
-      groupObject.appendChild(textObject);
-    } else if (imageObject) {
-      groupObject.appendChild(imageObject);
-    } else if (textObject) {
+    } else if (textObject) { // no image, just apply text with current offset
       groupObject.appendChild(textObject);
     } else {
-      //something has gone wrong
+      //something has gone wrong, we need to capture this
+      // it's possible that we might have the rare case of having both image and text, and with an "empty" node
+      // in which case
+      // TODO: handle this case
     }
     
-    if (x && y) {
+    // now we'll deal with external labels, for items
+    let outerTextObject = null;
+    let outerStr = "";
+    // for every key, required or otherwise, standard or slotted
+    if (currentNode.textOuter.length !== 0 || currentNode.type === 7 || currentNode.type === 8 || currentNode.type === 11) {
+      outerTextObject = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      outerTextObject.classList.add("text-node");
+      outerTextObject.setAttribute("x", "0");
+      outerTextObject.setAttribute("y", "60");// offset so that the text begins outside of the shape's borders
+      outerTextObject.setAttribute("fill", main.allowColors ? "white" : "black");
+      outerTextObject.setAttribute("text-anchor", "middle");
+      outerTextObject.innerHTML = "";
+      if (currentNode.textOuter.length !== 0) {
+        outerStr = currentNode.textOuter; // if there's a specific text, use that
+      } else { // otherwise, display the name of the item
+        outerStr = pickupType[currentNode.pickupType];
+      }
+      
+      // insert appropriate line breaks
+      outerStr = outerStr.split(" ");
+      let rollingText = "";
+      for (let u = 0; u < outerStr.length; u++) {
+        rollingText += " " + outerStr[u];
+        if (rollingText.length >= 5 || u + 1 === outerStr.length) {
+          let tspan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
+          tspan.setAttribute("x", "0");
+          tspan.setAttribute("dy", "1.2em");
+          tspan.textContent = rollingText;
+          
+          outerTextObject.appendChild(tspan);
+          rollingText = "";
+        }
+      }
+      
+      groupObject.appendChild(outerTextObject);
+    }
+    
+    // and now to place the group
+    if (x && y) { // if we pass in a specific location, drop it there
       groupObject.setAttribute("transform", "translate(" + x + " "+ y + ")");
-    } else {
+    } else { // otherwise, drop it wherever the cursor currently is
       groupObject.setAttribute("transform", "translate(" + getCursor().x + " "+ getCursor().y + ")");
     }
     
-    groupObject.addEventListener("mouseenter", hoverCapture);
-    groupObject.addEventListener("mouseleave", removeHover);
-    groupObject.addEventListener("click", clickCapture);
+    groupObject.addEventListener("mouseenter", hoverCapture); // apply hovering method
+    groupObject.addEventListener("mouseleave", removeHover); // and remove hovering effect
+    groupObject.addEventListener("click", clickCapture); // apply clicking method
     
+    // for each elevator that isn't a map root, we'll also include an arrow pointing south
     if (currentNode.type === 2 && currentNode.parent !== -1) {
-      let escapeArrow = arrow_down_template.cloneNode(true);
-      escapeArrow.removeAttribute("id");
-      let arrowFill;
-      let destination = workingData.find(n => n.id === currentNode.pointsToElevatorId);
-      if (destination !== undefined) {
+      let escapeArrow = arrow_down_template.cloneNode(true); // copy a down arrow
+      escapeArrow.removeAttribute("id"); // remove Id to prevent DOM troubles
+      let arrowFill = areaData[currentNode.mapId].color; // use the map's color for the arrow
+      let destination = workingData.find(n => n.id === currentNode.pointsToElevatorId); // find the destination node to grab the map data
+      if (destination !== undefined) { // if we can find it, use that map's color
         arrowFill = areaData[destination.mapId].color;
-      } else {
-        arrowFill = areaData[currentNode.mapId].color;
       }
-      if (main.allowColors) {
-        escapeArrow.setAttribute("fill", "#"+ arrowFill);
-      }
+      escapeArrow.setAttribute("fill", "#"+ arrowFill); // apply the color
       let lastLine;
       if (x && y) {
         insertPathLine("d", x, y);
@@ -500,28 +582,26 @@ let main = {};
         insertPathLine("d", getCursor().x, getCursor().y);
         lastLine = insertPathLine("u", getCursor().x, (getCursor().y + 144));
       }
-      escapeArrow.setAttribute("transform", "translate(0 144)");
+      escapeArrow.setAttribute("transform", "translate(0 144)"); // place some distance south of the elevator
       // color last line according to new map color
-      
+      // using a gradient
       let newGradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
-      let numGradsAlready = getCurrentMapElement("defs").children.length;
-      newGradient.setAttribute("id", "Gradient" + (numGradsAlready + 1))
+      newGradient.setAttribute("id", "Gradient" + (numGradsAlready + 1));
       newGradient.setAttribute("x1", 0);
       newGradient.setAttribute("x2", 0);
       newGradient.setAttribute("y1", 0);
       newGradient.setAttribute("y2", 1);
       let stop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
       stop1.setAttribute("offset", "0%");
-      stop1.setAttribute("stop-color", "#"+ areaData[root.mapId].color);
+      stop1.setAttribute("stop-color", "#" + areaData[currentNode.mapId].color);
       let stop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
       stop2.setAttribute("offset", "100%");
-      stop2.setAttribute("stop-color", "#"+ arrowFill);
+      stop2.setAttribute("stop-color", "#" + arrowFill);
       newGradient.appendChild(stop1);
       newGradient.appendChild(stop2);
       getCurrentMapElement("defs").appendChild(newGradient);
-      if (main.allowColors) {
-        lastLine.children[0].setAttribute("fill", "url(#" + newGradient.id + ")");
-      }
+      numGradsAlready++;
+      lastLine.children[0].setAttribute("fill", "url(#" + newGradient.id + ")");
       groupObject.appendChild(escapeArrow);
     }
     
@@ -532,7 +612,7 @@ let main = {};
     } else {
       let arr = hoverShape.className.split(" ");
       if (arr.indexOf("node-hover-overlay") == -1) {
-          hoverShape.className += " " + "node-hover-overlay";
+          hoverShape.className += " node-hover-overlay";
       }
     }
     hoverShape.removeAttribute("stroke");
@@ -540,17 +620,19 @@ let main = {};
     hoverShape.setAttribute("fill", "rgb(0, 0, 0, 0.33)");
     groupObject.appendChild(hoverShape);
     
-    getCurrentMapElement("mainMeat").appendChild(groupObject);
-    expandViewbox();
+    getCurrentMapElement("mainMeat").appendChild(groupObject); // now apply node to the map proper
+    expandViewbox(); // make room for the whole map
     
     return document.getElementById(groupObject.id);
   }
 
+  // move the cursor to certain coordinates, multiplied by the pixel factor
   function moveCursor(x, y) {
-    getCursor().x = (x + 1) * 144;
+    getCursor().x = (x + 1) * 144; // offset by 1 to allow for margins in the upper left
     getCursor().y = (y + 1) * 144;
   }
 
+  // instead of dropping the cursor, this is a relative move based on its current position
   function shiftCursor(dx, dy) {
     getCursor().x += dx * 144;
     getCursor().y += dy * 144;
@@ -558,12 +640,12 @@ let main = {};
 
   function getCurrentCoordsOfNode(nodeObj) {
     let returnValues = [];
-    let str = nodeObj.attributes.transform.value;
+    let str = nodeObj.attributes.transform.value; // obtain the positioning digits from the node
     let result = str.match(digitPattern);
-    returnValues.push(parseInt(result[0]));
-    returnValues.push(parseInt(result[1]));
+    returnValues.push(parseInt(result[0])); // x
+    returnValues.push(parseInt(result[1])); // y
     
-    return returnValues;
+    return returnValues; // returning as array
   }
 
   function getCurrentCoordsOfNodeById(elementId) {
@@ -571,11 +653,13 @@ let main = {};
     return getCurrentCoordsOfNode(nodeObj);
   }
 
+  // move shape to absolute position
   function moveNode(elementId, x, y) {
     let nodeObj = document.getElementById(elementId);
     nodeObj.setAttribute("transform", "translate(" + ((x + 1) * 144) + " " + ((y + 1) * 144) + ")");
   }
 
+  // move shape to relative position
   function shiftNode(elementId, dx, dy) {
     let nodeObj = document.getElementById(elementId);
     let coords = getCurrentCoordsOfNodeById(elementId);
@@ -586,6 +670,7 @@ let main = {};
     return cursor;
   }
 
+  // move cursor to this location
   function centerCursorOnElement(elementId) {
     let coords = getCurrentCoordsOfNodeById(elementId);
     moveCursor(((coords[0] / 144) - 1), ((coords[1] / 144) - 1));
@@ -593,17 +678,15 @@ let main = {};
 
   function insertJunctionDot(x, y) {
     let shapeObject = junction_template.cloneNode(true);
-    shapeObject.removeAttribute("id");
-    if (x && y) {
+    shapeObject.removeAttribute("id"); // strip away Id to prevent DOM problems
+    if (x && y) { // remote drop
       shapeObject.setAttribute("transform", "translate(" + x + " " + y + ")");
-    } else {
+    } else { // drop "here"
       shapeObject.setAttribute("transform", "translate(" + getCursor().x + " " + getCursor().y + ")");
     }
-    if (main.allowColors) {
-      shapeObject.setAttribute("fill", "#"+ areaData[mapRoots[main.currentMap - 1].mapId].color);
-    }
+    shapeObject.setAttribute("fill", "#" + areaData[mapRoots[main.currentMap - 1].mapId].color); // color fill
     
-    getCurrentMapElement("junctions").appendChild(shapeObject);
+    getCurrentMapElement("junctions").appendChild(shapeObject); // drop into the correct layer
     
     // retrieve currently-just-added element
     //return document.getElement();
@@ -633,9 +716,7 @@ let main = {};
     } else {
       copy.setAttribute("transform", "translate(" + getCursor().x + " " + getCursor().y + ")");
     }
-    if (main.allowColors) {
-      copy.children[0].setAttribute("fill", "#"+ areaData[mapRoots[main.currentMap - 1].mapId].color);
-    }
+    copy.children[0].setAttribute("fill", "#" + areaData[mapRoots[main.currentMap - 1].mapId].color);
     
     getCurrentMapElement("gridPaths").appendChild(copy);
     
@@ -887,6 +968,8 @@ let main = {};
     let diff = laterCoords[0] - earlierCoords[0];
     let diffRun = diff / 144;
     
+    // TODO: drop all children between source and destination the appropriate height
+    
     // and now make the graphics
     
     centerCursorOnElement(elementId);
@@ -1056,18 +1139,6 @@ let main = {};
     }
   }
 
-  function hoverElevator2(e) {
-    //console.log("elevator2 was hovered!");
-    let me = e.target;
-    let children = me.childNodes;
-    
-    for (let i = 0; i < children.length; i++) {
-      if (children[i].classList.contains("node-hover-overlay")) {
-        children[i].classList.add("show");
-      }
-    }
-  }
-
   function hoverBoss(e) {
     //console.log("boss was hovered!");
     let me = e.target;
@@ -1094,6 +1165,18 @@ let main = {};
 
   function hoverKey(e) {
     //console.log("Key was hovered!");
+    let me = e.target;
+    let children = me.childNodes;
+    
+    for (let i = 0; i < children.length; i++) {
+      if (children[i].classList.contains("node-hover-overlay")) {
+        children[i].classList.add("show");
+      }
+    }
+  }
+
+  function hoverSave(e) {
+    //console.log("Save was hovered!");
     let me = e.target;
     let children = me.childNodes;
     
@@ -1148,35 +1231,40 @@ let main = {};
     popMap(nextRoot.mapId);
   }
 
+  // clicking on the START element to begin navigation
   function clickRoot(e) {
-    let parent = e.target.parentElement;
-    centerCursorOnElement(parent.id);
+    let domElement = e.target.parentElement; // obtain the parent <g> which contains the ID info
+    centerCursorOnElement(domElement.id);
     
-    let str = parent.id.split("_")[1];
+    let str = domElement.id.split("_")[1]; // retrieve the ID
     let result = str.match(digitPattern);
     result = parseInt(result[0]);
-    let retrievedNode = findNodeById(result);
+    let dataNode = findNodeById(result);
     
-    if (retrievedNode === null) {
+    if (dataNode === null) {
       console.error("Could not find this root!");
-    } else if (!retrievedNode.expanded) {
-      retrievedNode.expanded = true;
-      animateChildren(parent.id, retrievedNode, { val: 1 });
     }
     
-    if (retrievedNode.id !== mapRoots[0].id) {
-      let destNode = workingData.find(entry => entry.id === retrievedNode.pointsToElevatorId);
-      if (destNode === undefined) {
+    // if the map is already displayed, we don't want to hide it with another click
+    if (!dataNode.expanded) {
+      dataNode.expanded = true; // lock display
+      animateChildren(domElement.id, dataNode, { val: 1 }); // expand relevant nodes
+    }
+    
+    // should there be missing data (like an incomplete rawData.js file)
+    if (dataNode.id !== mapRoots[0].id) {
+      let destNode = workingData.find(entry => entry.id === dataNode.pointsToElevatorId); // first, let's see if we can find the raw data that this is supposed to connect to
+      if (destNode === undefined) { // if we cannot, then we are missing a parent map (or pointsToElevatorId points to a map that isn't existent)
         console.log("Previous map not implemented, somehow");
       } else {
-        console.log("would open map to", areaData[destNode.mapId].name);
-        popMap(destNode.mapId);
+        console.log("would open map to", areaData[destNode.mapId].name); // if we found the data, then consoleout the intended map name
+        popMap(destNode.mapId); // and then display the map panel
       }
     }
   }
 
   function unlock(e) {
-    return;
+    return; // NOT CURRENTLY IMPLEMENTED
     let parent = e.target.parentElement;
     centerCursorOnElement(parent.id);
     
@@ -1387,7 +1475,7 @@ let main = {};
     //TODO: get item dependency lists of locks per key
     
     recursionC(treeClone, x => {
-      console.log("" + " #" + x.id + ": " + x.textFill);
+      console.log("" + " #" + x.id + ": " + x.textOuter);
     });
   }
 
@@ -1400,21 +1488,21 @@ let main = {};
   }
 
   function expandViewbox() {
-    let mapSearch = document.getElementById("mapSVG-" + main.currentMap);
+    let mapSearch = document.getElementById("mapSVG-" + main.currentMap); // for whatever the currently-displayed map
     let str = mapSearch.attributes.viewBox.value;
     let result = str.match(digitPattern);
     let newStr = "" + result[0] + " " + result[1] + " ";
-    if (parseInt(result[2]) < (getCursor().x + 144)) {
-      newStr += (getCursor().x + 144 + 72);
+    if (parseInt(result[2]) < (getCursor().x + 144)) { // if currently at the edge of the map
+      newStr += (getCursor().x + 144 + 72); // if needed, expand with a margin
     } else {
       newStr += result[2];
     }
-    if (parseInt(result[3]) < (getCursor().y + 144)) {
-      newStr += " " + (getCursor().y + 144 + 72);
+    if (parseInt(result[3]) < (getCursor().y + 144)) { // if currently at the edge of the map
+      newStr += " " + (getCursor().y + 144 + 72); // if needed, expand with a margin
     } else {
       newStr += " " + result[3];
     }
-    mapSearch.attributes.viewBox.value = newStr;
+    mapSearch.attributes.viewBox.value = newStr; // now apply the reformed string
   }
   
   function resizeCanvas() {
@@ -1436,7 +1524,7 @@ let main = {};
   };
 
   function debugRecursion(node) {
-    console.log("" + areaData[mapRoots[main.currentMap - 1].mapId].name + " #" + node.id + ": " + node.textFill);
+    console.log("" + areaData[mapRoots[main.currentMap - 1].mapId].name + " #" + node.id + ": " + node.textOuter);
   }
   
   function debugTree() {
@@ -1451,14 +1539,15 @@ let main = {};
   }
 
   function init() {
-    main.currentGame = games.m; // TODO: swap games
-    main.currentMap = 1;
-    main.goRandom = false;
-    main.allowColors = false;
-    makeTree();
+    main.currentGame = games.m; // TODO: swap games when HUD is made
+    main.currentMap = 1; // start at map 1 no matter which game is selected
+    main.goRandom = false; // TODO: select whether vanilla or randomized
+    main.allowColors = true; // TODO; colorblind option
+    makeTree(); // construct data tree
+    // at this point, the data tree should be complete, with vine data on the side. No visuals have been processed yet.
     
-    moveCursor(0, 0);
-    popMap(main.currentMap);
+    moveCursor(0, 0); // a behind-the-scenes pointer set to the origin point of the chart (where the START node is)
+    popMap(main.currentMap); // display map 1
   }
 
   main.init = init;

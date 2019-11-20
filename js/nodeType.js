@@ -12,5 +12,6 @@ const nodeType = {
   "other": 10,
   "slot": 11,
   "access": 12,
-  "end": 13
+  "end": 13,
+  "another": 14
 };

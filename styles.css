@@ -59,6 +59,11 @@ body {
   mix-blend-mode: screen;
 }
 
+.color-blind-image {
+  -webkit-filter: grayscale(100%); /* Safari 6.0 - 9.0 */
+  filter: grayscale(100%);
+}
+
 .boss-image { }
 
 .node-hover-overlay {
