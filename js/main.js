@@ -14,6 +14,7 @@ let main = {};
     "s": "sm",
     "o": "om",
     "f": "mf",
+    "d": "rd",
     "z": "zm",
     "r": "sr",
     "p": "mp",
@@ -143,24 +144,23 @@ let main = {};
     }
     let candidates = listConnections(currentNode); // obtain all children to current node
     // cycle through all children
-    for (let i = 0; i < candidates.length; i++) {
-      if (!candidates[i].hasOwnProperty("parents")) {
-        candidates[i].parents = []; // allow children to have multiple parents for multiple paths
+    for (candidate of candidates) {
+      if (!candidate.hasOwnProperty("parents")) {
+        candidate.parents = []; // allow children to have multiple parents for multiple paths
       }
-      candidates[i].parents.push(currentNode); // add current node to child's parent list
+      candidate.parents.push(currentNode); // add current node to child's parent list
       
       // for cases when a connection needs to be made to another part of the map without children to create that connection
-      if (candidates[i].cousinsTo && Array.isArray(candidates[i].cousinsTo) && candidates[i].cousinsTo.length > 0) {
+      if (candidate.cousinsTo && Array.isArray(candidate.cousinsTo) && candidate.cousinsTo.length > 0) {
         if (!(mapVines[currentNode.mapId - 1] && Array.isArray(mapVines[currentNode.mapId - 1]) && mapVines[currentNode.mapId - 1].length > 0)) {
           mapVines[currentNode.mapId - 1] = []; // create a "vine" connection
         }
-        let newArray = [candidates[i].id, ...candidates[i].cousinsTo]; // create vine connecting current child to its cousins, by node ID
+        let newArray = [candidate.id, ...candidate.cousinsTo]; // create vine connecting current child to its cousins, by node ID
         let newerArray = newArray.sort(); // sort by ID, earliest first
         
         // search to make sure new vine is not a duplicate
         let notFound = true; // flag for determining duplication
-        for (let j = 0; j < mapVines[currentNode.mapId - 1].length; j++) {
-          let cluster = mapVines[currentNode.mapId - 1][j];
+        for(const cluster of mapVines[currentNode.mapId - 1]) {
           if (cluster.length !== newerArray.length) { // if vines are not the same length, ignore it and move to the next; can't be duplicate
             continue;
           }
@@ -182,10 +182,10 @@ let main = {};
       }
       
       // now add this node to the list of checked-off map nodes, to prevent infinite or loop recursion
-      if (mapNodes[candidates[i].id] !== true) {
-        currentNode.children.push(candidates[i]); // add child to the parent's list of children
-        mapNodes[candidates[i].id] = true; // add to checklist
-        recursionA(candidates[i], mapNodes); // move to first child and repeat this function
+      if (mapNodes[candidate.id] !== true) {
+        currentNode.children.push(candidate); // add child to the parent's list of children
+        mapNodes[candidate.id] = true; // add to checklist
+        recursionA(candidate, mapNodes); // move to first child and repeat this function
         // based on this motion, all firstborn children (going down all generations) get processed first, before the last generations's firstborn passes the torch to its sibling.
         // Once all siblings of a generation are complete, then the torch is passed back to the parent, and its next sibling is processed.
       }
@@ -197,9 +197,9 @@ let main = {};
     mapRoots = workingData.filter(node => node.type === nodeType.start);
     root = mapRoots[0]; // grab starting map as root of all maps
     
-    for (let i = 0; i < mapRoots.length; i++) {
+    for (const mapRoot of mapRoots) {
       let mapNodes = {}; // checklist for each node in the game
-      let currentNode = mapRoots[i]; // start at map node
+      let currentNode = mapRoot; // start at map node
       recursionA(currentNode, mapNodes); // cycle through for each node starting at map node
     }
     console.log(mapRoots);
@@ -207,8 +207,8 @@ let main = {};
 
   function recursionB(currentNode, predicate) {
     predicate(currentNode);
-    for (let i = 0; i < currentNode.children.length; i++) {
-      recursionB(currentNode.children[i], predicate);
+    for (child of currentNode.children) {
+      recursionB(child, predicate);
     }
   }
 
@@ -233,10 +233,11 @@ let main = {};
     return findNodeByProp("id", value);
   }
   
+  // check to see if node is a potential ancestor to another node
   function isAncestorTo(nodeIdA, nodeIdB) {
     let returnValue = false;
     let currentNode = findNodeById(nodeIdB);
-    if (currentNode === null) {
+    if (currentNode === null) { // if we can't find the second node, like it hasn't been made yet, then call it a failure
       return false;
     }
     while (currentNode.id !== -1) {
@@ -278,23 +279,26 @@ let main = {};
     // do different things based on the node type
     switch(currentNode.type) {
       case 1: // starting node
+        groupObject.id += "goal" + currentNode.id; // add specific data about node to ID
+        shapeObject = goal_template.cloneNode(true); // circle
+        hoverShape = goal_template.cloneNode(true); // circle
+        imageClass = ""; // no image needed, so no special effects needed
+        hoverCapture = hoverBasic; // assign hover method
+        clickCapture = clickRoot; // assign click method
+        if (root.id !== currentNode.id) { // if this isn't the root of all maps
+          titleText = areaData[workingData.find(n => n.id === currentNode.pointsToElevatorId).mapId].name.toUpperCase(); // display destination name
+          fillColor = "#" + areaData[workingData.find(n => n.id === currentNode.pointsToElevatorId).mapId].color; // get color of target elevator
+        } else {
+          titleText = "START"; // standard title text
+        }
+        break;
       case 14: // another node, "other" but circle
         groupObject.id += "goal" + currentNode.id; // add specific data about node to ID
         shapeObject = goal_template.cloneNode(true); // circle
         hoverShape = goal_template.cloneNode(true); // circle
         imageClass = ""; // no image needed, so no special effects needed
-        if (currentNode.type === 1) { // starting point
-          hoverCapture = hoverRoot; // assign hover method
-          clickCapture = clickRoot; // assign click method
-          if (root.id !== currentNode.id) { // if this isn't the root of all maps
-            titleText = areaData[workingData.find(n => n.id === currentNode.pointsToElevatorId).mapId].name.toUpperCase(); // display destination name
-          } else {
-            titleText = "START"; // standard title text
-          }
-        } else {
-          hoverCapture = doNothing; // assign hover method
-          clickCapture = doNothing; // assign click method
-        }
+        hoverCapture = doNothing; // assign hover method
+        clickCapture = doNothing; // assign click method
         break;
       case 13: // ending node
         groupObject.id += "end" + currentNode.id; // add specific data about node to ID
@@ -310,7 +314,7 @@ let main = {};
         shapeObject = goal_template.cloneNode(true); // circle
         hoverShape = goal_template.cloneNode(true); // circle
         imageClass = ""; // no image needed, so no special effects needed
-        hoverCapture = hoverElevator; // assign hover method
+        hoverCapture = hoverBasic; // assign hover method
         clickCapture = clickElevator; // assign click method
         // if not yet implemented
         if (currentNode.pointsToElevatorId !== -1) {
@@ -325,7 +329,7 @@ let main = {};
         hoverShape = goal_template.cloneNode(true); // circle
         imageClass = "boss-image"; // image might be needed; if so, no filters to be applied
         fillColor = "#" + objColors.boss; // default boss/battle color
-        hoverCapture = hoverBoss; // assign hover method
+        hoverCapture = hoverBasic; // assign hover method
         clickCapture = defeatBoss; // assign click method
         break;
       case 5: // lock
@@ -342,7 +346,7 @@ let main = {};
           // if the lock is not an item lock, then the fillColor should be white
         }
         groupObject.setAttribute("isUnlocked", "false"); // make sure the rest of the map doesn't display, yet
-        hoverCapture = hoverLock; // assign hover method
+        hoverCapture = hoverBasic; // assign hover method
         clickCapture = unlock; // assign click method
         break;
       case 12: // access
@@ -352,7 +356,7 @@ let main = {};
         imageClass = "lock-image"; // apply MULTIPLY
         fillColor = "#"+ objColors[pickupType[currentNode.pickupType]]; // grab the background color
         groupObject.setAttribute("isUnlocked", "false"); // make sure the rest of the map doesn't display, yet
-        hoverCapture = hoverLock; // assign hover method
+        hoverCapture = hoverBasic; // assign hover method
         clickCapture = unlock; // assign click method
         break;
       case 8: // required key
@@ -361,7 +365,7 @@ let main = {};
         hoverShape = key_template.cloneNode(true); // diamond
         imageClass = "key-image"; // apply SCREEN
         fillColor = "#"+ objColors[pickupType[currentNode.pickupType]]; // grab the background color
-        hoverCapture = hoverKey; // assign hover method
+        hoverCapture = hoverBasic; // assign hover method
         clickCapture = assignKey; // assign click method
         break;
       case 9: // required key (blank)
@@ -369,7 +373,7 @@ let main = {};
         shapeObject = key_template.cloneNode(true); // diamond
         hoverShape = key_template.cloneNode(true); // diamond
         imageClass = "blank-key"; // needs to be visible, so don't apply anything
-        hoverCapture = hoverKey; // assign hover method
+        hoverCapture = hoverBasic; // assign hover method
         clickCapture = assignKey; // assign click method
         break;
       case 4: // save room
@@ -382,10 +386,10 @@ let main = {};
         fillColor = "#"+ objColors[pickupType[currentNode.pickupType]]; // grab the background color
         // non-item nodes like save rooms and maps, display as on a white background
         if (currentNode.type === 4) { // save room
-          hoverCapture = hoverSave; // assign hover method
+          hoverCapture = hoverBasic; // assign hover method
           clickCapture = save; // assign click method
         } else if (currentNode.type === 7) { // unrequired key
-          hoverCapture = hoverUnreq; // assign hover method
+          hoverCapture = hoverBasic; // assign hover method
           clickCapture = collectKey; // assign click method
         } else { // other node
           hoverCapture = doNothing; // assign hover method
@@ -398,7 +402,7 @@ let main = {};
         hoverShape = slot_template.cloneNode(true); // pentagon
         imageClass = "key-image"; // apply SCREEN
         fillColor = "#"+ objColors[pickupType[currentNode.pickupType]]; // grab the background color
-        hoverCapture = hoverKey; // assign hover method
+        hoverCapture = hoverBasic; // assign hover method
         clickCapture = assignKey; // assign click method
         break;
       case 6: // one-way arrow
@@ -418,7 +422,7 @@ let main = {};
           hoverShape = arrow_right_template.cloneNode(true);
         }
         fillColor = "#"+ areaData[currentNode.mapId].color; // get color of this map
-        hoverCapture = hoverOther; // assign hover method
+        hoverCapture = hoverBasic; // assign hover method
         clickCapture = doNothing; // assign click method
         break;
       case 0:
@@ -537,20 +541,23 @@ let main = {};
       // insert appropriate line breaks
       outerStr = outerStr.split(" ");
       let rollingText = "";
-      for (let u = 0; u < outerStr.length; u++) {
-        rollingText += " " + outerStr[u];
-        if (rollingText.length >= 5 || u + 1 === outerStr.length) {
+      for (let i = 0; i < outerStr.length; i++) {
+        if (i > 0) { // insert a space after each word, after the first word
+          rollingText += " ";
+        }
+        rollingText += outerStr[i];
+        if (rollingText.length >= 5 || i + 1 === outerStr.length) { // If the text is longer than one line, cut it. Also process the last line of a text.
           let tspan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
           tspan.setAttribute("x", "0");
-          tspan.setAttribute("dy", "1.2em");
-          tspan.textContent = rollingText;
+          tspan.setAttribute("dy", "1.2em"); // includes line spacing
+          tspan.textContent = rollingText; // paste the text to the line
           
           outerTextObject.appendChild(tspan);
-          rollingText = "";
+          rollingText = ""; // reset current text chunk
         }
       }
       
-      groupObject.appendChild(outerTextObject);
+      groupObject.appendChild(outerTextObject); // save the text line
     }
     
     // and now to place the group
@@ -749,8 +756,7 @@ let main = {};
     }
     childCollection = parentElement.children;
     
-    for (let i = 0; i < childCollection.length; i++) {
-      let child = childCollection[i];
+    for (child of childCollection) {
       let str = child.attributes.transform.value;
       let result = str.match(digitPattern);
       
@@ -775,8 +781,8 @@ let main = {};
     collecs.push(getCurrentMapElement("junctions"));
     collecs.push(getCurrentMapElement("mainMeat"));
     
-    for (let i = 0; i < collecs.length; i++) {
-      for (let j = 0; j < collecs[i].children.length; j++) {
+    for (collection of collecs) {
+      for (child of collection.children) {
         let child = collecs[i].children[j];
         let childCoords = getCurrentCoordsOfNode(child);
         if (coords[0] < childCoords[0]) {
@@ -787,8 +793,7 @@ let main = {};
       }
     }
     
-    for (let i = 0; i < toShiftArray.length; i++) {
-      let moveThis = toShiftArray[i];
+    for (moveThis of toShiftArray) {
       let str = moveThis.attributes.transform.value;
       let result = str.match(digitPattern);
       let childCoords = [];
@@ -804,8 +809,7 @@ let main = {};
       moveCursor(tempCursorSave.x, tempCursorSave.y);
     }
     
-    for (let i = 0; i < toConnectArray.length && accumulator.val > 0; i++) {
-      let candidate = toConnectArray[i];
+    for (candidate of toConnectArray) {
       if (candidate.classList.contains("path-right")) {
         let str = candidate.attributes.transform.value;
         let result = str.match(digitPattern);
@@ -883,16 +887,26 @@ let main = {};
       case 3: 
       case 2: 
       case 1: 
+      case 14: 
         destinationId += "_goal" + destinationRaw.id;
+        break;
+      case 13: 
+        destinationId += "_end" + destinationRaw.id;
         break;
       case 5: 
         destinationId += "_lock" + destinationRaw.id;
         break;
       case 8: 
-        break;
         destinationId += "_key" + destinationRaw.id;
+        break;
       case 9: 
         destinationId += "_unclaimed-key" + destinationRaw.id;
+        break;
+      case 11: 
+        destinationId += "_slot" + destinationRaw.id;
+        break;
+      case 12: 
+        destinationId += "_access" + destinationRaw.id;
         break;
       case 4: 
       case 7: 
@@ -945,8 +959,7 @@ let main = {};
     let maxHeight = sourceCoords[1] > destCoords[1] ? sourceCoords[1] : destCoords[1];
     let meatyBits = getCurrentMapElement("mainMeat").children;
     
-    for (let j = 0; j < meatyBits.length; j++) {
-      let child = meatyBits[j];
+    for (child of meatyBits) {
       let childCoords = getCurrentCoordsOfNode(child);
       if (earlierCoords[0] < childCoords[0] && childCoords[0] < laterCoords[0]) {
         // now in an area between the source and the destination columns
@@ -1002,11 +1015,13 @@ let main = {};
     centerCursorOnElement(elementId);
   }
 
+  // now let's make some vines in graphic form
   function attemptVines(elementId, node) {
-    for (let i = 0; mapVines[main.currentMap - 1] && i < mapVines[main.currentMap - 1].length; i++) {
+    let returnValue = false;
+    for (let i = 0; mapVines[main.currentMap - 1] && i < mapVines[main.currentMap - 1].length; i++) { // let's go through every vine cluster in the databank to see if we need to make one right now
       let clusterDests = [];
-      if (mapVines[main.currentMap - 1][i].includes(node.id)) {
-        clusterDests = mapVines[main.currentMap - 1][i].filter(n => n !== node.id);
+      if (mapVines[main.currentMap - 1][i].includes(node.id)) { // if a vine cluster involves this node
+        clusterDests = mapVines[main.currentMap - 1][i].filter(n => n !== node.id); // then let's hold onto the nodes that this vine is supposed to connect to
       }
       
       if (clusterDests.length === 0) {
@@ -1014,13 +1029,11 @@ let main = {};
         continue;
       }
       
-      for (let k = 0; k < clusterDests.length; k++) {
-        
+      for (dest of clusterDests) {
         //TODO: refactor to take all vine ends into account
         
-        let destinationRaw = findNodeById(clusterDests[k]);
-        
-        if (destinationRaw === null || destinationRaw.type === 0) {
+        let destinationRaw = findNodeById(dest);
+        if (destinationRaw === null || destinationRaw.type === 0) { // if the node doesn't exist yet, ignore it
           continue;
         }
         
@@ -1031,204 +1044,203 @@ let main = {};
           //console.log("attempting to vine with cousin!");
           // continue with this one
           createCousinVine(elementId, destinationRaw);
+          returnValue = true;
         }
       }
     }
+    return returnValue;
   }
 
+  // create children nodes and paths related to a node
   function animateChildren(elementId, node, accumulator) {
     centerCursorOnElement(elementId);
     expandViewbox();
     
+    // accumulator keeps track of the width of columns to report, so that the parent can scoot its siblings enough to the right to make space for all of its descendants
     if (node.children.length === 0) {
-      accumulator.val = 1;
-      return;
+      accumulator.val = 1; // no children = width of itself, which is 1
+      return; // and because there's no children, we don't need to factor in anything else with paths
     }
-    if (node.parentId === -1) {
+    if (node.parentId === -1) { // the map root needs to branch right first before displaying its children
       insertPathLine("r");
       shiftCursor(1, 0);
       insertPathLine("l");
-    } else {
+    } else { // everything else branches down
       insertPathLine("d");
       shiftCursor(0, 1);
       insertPathLine("u");
     }
     
-    let prevAccumulator = {
-      val : accumulator.val
+    let prevAccumulator = { // to pass by reference, this needs to be an object!
+      val : accumulator.val // so get ready to pass this value up to its ancestors
     };
-    accumulator.val = node.children.length;
+    accumulator.val = node.children.length; // if a node has multiple children, the parents need to know
     
-    for (let i = 0; i < node.children.length; i++) {
+    for (let i = 0; i < node.children.length; i++) { // for each child, going down each generation for the firstborn before moving to the secondborn
       let child = node.children[i];
-      if (node.children.length > 1) {
-        if (i > 0) {
+      if (node.children.length > 1) { // when a parent has multiple children, we need to prepare horizontal lines and junction dots to make space for the children nodes
+        if (i > 0) { // before making any of its siblings, we're going to need to move some columns over, and make the appropriate line
           // get width of previous' children
-          for (let j = 0; j < prevAccumulator.val; j++) {
+          for (let j = 0; j < prevAccumulator.val; j++) { // each descendant needs to report in to the ancestor, so they know how many spaces to move to the right
             insertPathLine("r");
             shiftCursor(1, 0);
             insertPathLine("l");
           }
         }
-        insertJunctionDot();
-        insertPathLine("d");
+        insertJunctionDot(); // now that we're in the destination column, place the junction dot
+        insertPathLine("d"); // and a line length of 1 down
         shiftCursor(0, 1);
         insertPathLine("u");
-        // TODO: get drop height based on pickup type, for lock types
-      } else if (node.parentId === -1) {
+        // TODO: do the proper method for dropping keys and locks, based on Mark's graphics
+      } else if (node.parentId === -1) { // should a map begin with only one child, let's still include a junction dot
         insertJunctionDot();
-        insertPathLine("d");
+        insertPathLine("d"); // and the one line down
         shiftCursor(0, 1);
         insertPathLine("u");
-      }
-      let newNode = makeNode(child); ///HERE
+      } // otherwise, don't include a junction dot
+      let newNode = makeNode(child); // now time to make the node for this child
       
+      // and now that this node has been created, we need to deal with its descendants
       // recursion
-      //if (child.type !== nodeType.lock || child.isUnlocked) {
-        let nChildren = {
-          val: 1
+      //if (child.type !== nodeType.lock || child.isUnlocked) { // only once this lock type has been unlocked
+        let nChildren = { // now create accumulator for descendants
+          val: 1 // needs to pass by reference, not value, otherwise there is no point
         };
-        animateChildren(newNode.id, child, nChildren);
-        attemptVines(newNode.id, child);
-        prevAccumulator = nChildren;
-        accumulator.val += nChildren.val - 1;
+        animateChildren(newNode.id, child, nChildren); // recursive method
+        let vinesDone = attemptVines(newNode.id, child); // now that that is done for all descendants, let's try creating vines
+        if (vinesDone && child.children.length === 1) { // in the fringe case where a vine is inserted where there is otherwise only a single child, we're going to need to move the branch down one and add a junction dot
+          //shiftNode(child.children[0].id, 0, 1);
+        }
+        prevAccumulator = nChildren; // replace previous accumulator with the currently-updated one (from this node's descendants) to pass on to the sibling
+        accumulator.val += nChildren.val - 1; // add the extra columns before returning to ancestor
       //}
       
-      shiftCursor(0, -1);
-      if (node.children.length === 1) {
+      shiftCursor(0, -1); // and now that that's all finally done, step up one row
+      if (node.children.length === 1) { // or two, if this is the only child
         shiftCursor(0, -1);
       }
+      // before moving to the sibling of this node
     }
     
-    centerCursorOnElement(elementId);
+    centerCursorOnElement(elementId); // once all is said and done, return cursor to this node. This will allow all future branching and treemaking to use this node as the "root"
   }
 
   function removeHover(e) {
     //console.log("hover ended!");
-    let me = e.target;
-    let children = me.childNodes;
     
-    for (let i = 0; i < children.length; i++) {
-      if (children[i].classList.contains("node-hover-overlay")) {
-        children[i].classList.remove("show");
+    for (child of e.target.childNodes) {
+      if (child.classList.contains("node-hover-overlay")) {
+        child.classList.remove("show");
       }
     }
   }
 
   function hoverRoot(e) {
     //console.log("root was hovered!");
-    let me = e.target;
-    let children = me.childNodes;
     
-    for (let i = 0; i < children.length; i++) {
-      if (children[i].classList.contains("node-hover-overlay")) {
-        children[i].classList.add("show");
+    for (child of e.target.childNodes) {
+      if (child.classList.contains("node-hover-overlay")) {
+        child.classList.add("show");
       }
     }
   }
 
   function hoverElevator(e) {
     //console.log("elevator was hovered!");
-    let me = e.target;
-    let children = me.childNodes;
     
-    for (let i = 0; i < children.length; i++) {
-      if (children[i].classList.contains("node-hover-overlay")) {
-        children[i].classList.add("show");
+    for (child of e.target.childNodes) {
+      if (child.classList.contains("node-hover-overlay")) {
+        child.classList.add("show");
       }
     }
   }
 
   function hoverBoss(e) {
     //console.log("boss was hovered!");
-    let me = e.target;
-    let children = me.childNodes;
     
-    for (let i = 0; i < children.length; i++) {
-      if (children[i].classList.contains("node-hover-overlay")) {
-        children[i].classList.add("show");
+    for (child of e.target.childNodes) {
+      if (child.classList.contains("node-hover-overlay")) {
+        child.classList.add("show");
       }
     }
   }
 
   function hoverLock(e) {
     //console.log("lock was hovered!");
-    let me = e.target;
-    let children = me.childNodes;
     
-    for (let i = 0; i < children.length; i++) {
-      if (children[i].classList.contains("node-hover-overlay")) {
-        children[i].classList.add("show");
+    for (child of e.target.childNodes) {
+      if (child.classList.contains("node-hover-overlay")) {
+        child.classList.add("show");
       }
     }
   }
 
   function hoverKey(e) {
     //console.log("Key was hovered!");
-    let me = e.target;
-    let children = me.childNodes;
     
-    for (let i = 0; i < children.length; i++) {
-      if (children[i].classList.contains("node-hover-overlay")) {
-        children[i].classList.add("show");
+    for (child of e.target.childNodes) {
+      if (child.classList.contains("node-hover-overlay")) {
+        child.classList.add("show");
       }
     }
   }
 
   function hoverSave(e) {
     //console.log("Save was hovered!");
-    let me = e.target;
-    let children = me.childNodes;
     
-    for (let i = 0; i < children.length; i++) {
-      if (children[i].classList.contains("node-hover-overlay")) {
-        children[i].classList.add("show");
+    for (child of e.target.childNodes) {
+      if (child.classList.contains("node-hover-overlay")) {
+        child.classList.add("show");
       }
     }
   }
 
   function hoverUnreq(e) {
     //console.log("Unreq was hovered!");
-    let me = e.target;
-    let children = me.childNodes;
     
-    for (let i = 0; i < children.length; i++) {
-      if (children[i].classList.contains("node-hover-overlay")) {
-        children[i].classList.add("show");
+    for (child of e.target.childNodes) {
+      if (child.classList.contains("node-hover-overlay")) {
+        child.classList.add("show");
       }
     }
   }
 
   function hoverOther(e) {
     //console.log("Other was hovered!");
-    let me = e.target;
-    let children = me.childNodes;
     
-    for (let i = 0; i < children.length; i++) {
-      if (children[i].classList.contains("node-hover-overlay")) {
-        children[i].classList.add("show");
+    for (child of e.target.childNodes) {
+      if (child.classList.contains("node-hover-overlay")) {
+        child.classList.add("show");
+      }
+    }
+  }
+  
+  function hoverBasic(e) {
+    for (child of e.target.childNodes) {
+      if (child.classList.contains("node-hover-overlay")) {
+        child.classList.add("show");
       }
     }
   }
 
   function clickElevator(e) {
     //console.log("elevator was clicked!", e);
-    let parent = e.target.parentElement;
-    let str = parent.id.split("_")[1];
-    let result = str.match(digitPattern);
+    let groupNode = e.target.parentElement;
+    let str = groupNode.id.split("_")[1];
+    let result = str.match(digitPattern); // grab the ID value of the node
     result = parseInt(result[0]);
-    let retrievedNode = findNodeById(result);
+    let retrievedNode = findNodeById(result); // retrieve the object
     if (retrievedNode === null) {
-      console.error("Could not find this elevator's data!");
+      console.error("Could not find this elevator's data!"); // need to find out why the elevator was made wrong
       return;
     }
-    let nextRoot = workingData.find(entry => entry.id === retrievedNode.pointsToElevatorId);
+    let nextRoot = workingData.find(entry => entry.id === retrievedNode.pointsToElevatorId); // find the destination node
     if (nextRoot === undefined) {
       console.log("Next map not implemented");
       return;
     }
     console.log("would open map to", areaData[nextRoot.mapId].name);
-    popMap(nextRoot.mapId);
+    popMap(nextRoot.mapId); // open map panel
   }
 
   // clicking on the START element to begin navigation
@@ -1354,8 +1366,8 @@ let main = {};
   
   function recursionC(currentNode, predicate) {
     predicate(currentNode);
-    for (let i = 0; i < currentNode.children.length; i++) {
-      recursionC(currentNode.children[i], predicate);
+    for (child of currentNode.children) {
+      recursionC(child, predicate);
     }
   }
   
@@ -1378,31 +1390,30 @@ let main = {};
     recursionC(treeClone, node => {
       let dest;
       if (node.type === nodeType.save || node.type === nodeType.other || ([3, 7].includes(node.pickupType) && node.type === nodeType.unreq)) {
-        let childList = newGetById(node.parents[0]).children;
-        for (let j = 0; j < childList.length; j++) {
-          if (childList[j].id === node.id) {
+        let groupNode = node.parents[0];
+        for (child of newGetById(groupNode).children) {
+          if (child.id === node.id) {
             dest = j;
             break;
           }
         }
-        for (let i = 0; i < node.children.length; i++) {
-          node.children[i].parents[0] = node.parents[0];
+        for (child of node.children) {
+          child.parents[0] = groupNode;
         }
-        newGetById(node.parents[0]).children.splice(dest, 1, ...node.children);
+        newGetById(groupNode).children.splice(dest, 1, ...node.children);
       } else if (node.type === nodeType.elevator) {
         //TODO: factor in elevators
       } else if (node.type === nodeType.key || node.type === nodeType.unreq) {
         
         if (keysFound.includes(node.pickupType) && node.type === nodeType.unreq) {
-          
-          let childList = newGetById(node.parents[0]).children;
-          for (let j = 0; j < childList.length; j++) {
-            if (childList[j].id === node.id) {
+          let groupNode = node.parents[0];
+          for (child of newGetById(groupNode).children) {
+            if (child.id === node.id) {
               dest = j;
               break;
             }
           }
-          newGetById(node.parents[0]).children.splice(dest, 1, ...node.children);
+          newGetById(groupNode).children.splice(dest, 1, ...node.children);
           
         } else {
           if (!keysFound.includes(node.pickupType)) {
@@ -1441,17 +1452,17 @@ let main = {};
                 }
                 
                 if (ancestorCheck) {
-                  let childList = newGetById(arrayOfLocks[j].parents[0]).children;
-                  for (let l = 0; l < childList.length; l++) {
-                    if (childList[l].id === arrayOfLocks[j].id) {
+                  let ancestor = arrayOfLocks[j].parents[0];
+                  for (child of newGetById(ancestor).children) {
+                    if (child[l].id === arrayOfLocks[j].id) {
                       dest = l;
                       break;
                     }
                   }
-                  for (let k = 0; k < node.children.length; k++) {
-                    node.children[k].parents[0] = node.parents[0];
+                  for (child of node.children) {
+                    child.parents[0] = node.parents[0];
                   }
-                  newGetById(arrayOfLocks[j].parents[0]).children.splice(dest, 1, ...arrayOfLocks[j].children); // TODO: make sure this is correct?
+                  newGetById(ancestor).children.splice(dest, 1, ...arrayOfLocks[j].children); // TODO: make sure this is correct?
                 }
               }
             }
@@ -1505,13 +1516,14 @@ let main = {};
     mapSearch.attributes.viewBox.value = newStr; // now apply the reformed string
   }
   
+  // resize background grid to fit the browser window
   function resizeCanvas() {
     let canvas = document.getElementById("background");
-    if (canvas.width !== window.innerWidth){
+    if (canvas.width !== window.innerWidth){ // only change the dimension that changes
       canvas.width = window.innerWidth;
     }
 
-    if (canvas.height !== window.innerHeight){
+    if (canvas.height !== window.innerHeight){ // only change the dimension that changes
       canvas.height = window.innerHeight;
     }
 
@@ -1524,7 +1536,7 @@ let main = {};
   };
 
   function debugRecursion(node) {
-    console.log("" + areaData[mapRoots[main.currentMap - 1].mapId].name + " #" + node.id + ": " + node.textOuter);
+    console.log("" + areaData[mapRoots[node.mapId - 1].mapId].name + " #" + node.id + ": " + pickupType[node.pickupType] + " - " + node.textFill + " - " + node.textOuter);
   }
   
   function debugTree() {
