@@ -44,12 +44,14 @@ let main = {
       canvas.height = window.innerHeight;
     }
 
-    let context = canvas.getContext("2d");
-    let gridImage = document.getElementById("grid_" + main.currentGame);
-    let pattern = context.createPattern(gridImage, "repeat");
-    context.rect(0, 0, window.innerWidth, window.innerHeight);
-    context.fillStyle = pattern;
-    context.fill();
+    if (main.allowColors) {
+      let context = canvas.getContext("2d");
+      let gridImage = document.getElementById("grid_" + main.currentGame);
+      let pattern = context.createPattern(gridImage, "repeat");
+      context.rect(0, 0, window.innerWidth, window.innerHeight);
+      context.fillStyle = pattern;
+      context.fill();
+    }
   };
 
   function debugRecursion(node) {
@@ -58,6 +60,7 @@ let main = {
   
   function debugTree() {
     console.log("vine cluster:: total", setup.mapVines);
+    console.log("close relatives:: total", setup.mapRelatives);
     let saveMap = main.currentMap;
     for (let i = 0; i < numMapsReady; i++) {
       main.currentMap = i + 1;

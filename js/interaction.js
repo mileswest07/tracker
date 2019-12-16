@@ -141,34 +141,6 @@ let interaction = {};
     cursor.move(((coords[0] / 144) - 1), ((coords[1] / 144) - 1));
   }
 
-  function recursionB(currentNode, predicate) {
-    predicate(currentNode);
-    for (child of currentNode.children) {
-      recursionB(child, predicate);
-    }
-  }
-
-  function navigateTree(predicate) {
-    let currentRoot = setup.mapRoots[main.currentMap - 1];
-    recursionB(currentRoot, predicate);
-  }
-
-  function findNodeByProp(property, value) {
-    let returnNode = null;
-    
-    navigateTree(currentNode => {
-      if (currentNode[property] === value) {
-        returnNode = currentNode;
-      }
-    });
-    
-    return returnNode;
-  }
-  
-  function findNodeById(value) {
-    return findNodeByProp("id", value);
-  }
-
   function expandViewbox() {
     let mapSearch = document.getElementById("mapSVG-" + main.currentMap); // for whatever the currently-displayed map
     let str = mapSearch.attributes.viewBox.value;
@@ -268,7 +240,11 @@ let interaction = {};
     } else {
       copy.setAttribute("transform", "translate(" + cursor.get().x + " " + cursor.get().y + ")");
     }
-    copy.children[0].setAttribute("fill", "#" + areaData[setup.mapRoots[main.currentMap - 1].mapId].color);
+    if (main.allowColors) {
+      copy.children[0].setAttribute("fill", "#" + areaData[setup.mapRoots[main.currentMap - 1].mapId].color);
+    } else {
+      copy.children[0].setAttribute("fill", "#ffffff");
+    }
     
     getCurrentMapElement("gridPaths").appendChild(copy);
     
@@ -282,6 +258,52 @@ let interaction = {};
     return thisLine[thisLine.length - 1];
   }
   
+  function makeLineInDirection(direction) {
+    let firstDirection;
+    let secondDirection;
+    let xUnit = 0;
+    let yUnit = 0;
+    
+    switch (direction) {
+      case "d":
+        firstDirection = "d";
+        secondDirection = "u";
+        xUnit = 0;
+        yUnit = 1;
+        break;
+      case "u":
+        firstDirection = "u";
+        secondDirection = "d";
+        xUnit = 0;
+        yUnit = -1;
+        break;
+      case "r":
+        firstDirection = "r";
+        secondDirection = "l";
+        xUnit = 1;
+        yUnit = 0;
+        break;
+      case "l":
+        firstDirection = "l";
+        secondDirection = "r";
+        xUnit = -1;
+        yUnit = 0;
+        break;
+      default:
+        break;
+    }
+    
+    insertPathLine(firstDirection);
+    cursor.shift(xUnit, yUnit);
+    insertPathLine(secondDirection);
+  }
+  
+  function makeLineInDirectionByUnits(direction, units) {
+    for (let i = 0; i < units; i++) {
+      makeLineInDirection(direction);
+    }
+  }
+  
   function insertJunctionDot(x, y) {
     let shapeObject = junction_template.cloneNode(true);
     shapeObject.removeAttribute("id"); // strip away Id to prevent DOM problems
@@ -290,7 +312,12 @@ let interaction = {};
     } else { // drop "here"
       shapeObject.setAttribute("transform", "translate(" + cursor.get().x + " " + cursor.get().y + ")");
     }
-    shapeObject.setAttribute("fill", "#" + areaData[setup.mapRoots[main.currentMap - 1].mapId].color); // color fill
+    // color fill, factoring in colorblind mode
+    if (main.allowColors) {
+      shapeObject.setAttribute("fill", "#" + areaData[setup.mapRoots[main.currentMap - 1].mapId].color); // color fill
+    } else {
+      shapeObject.setAttribute("fill", "#ffffff");
+    }
     
     getCurrentMapElement("junctions").appendChild(shapeObject); // drop into the correct layer
     
@@ -448,6 +475,35 @@ let interaction = {};
     centerCursorOnElement(elementId);
   }
   
+
+  function recursionB(currentNode, predicate) {
+    predicate(currentNode);
+    for (child of currentNode.children) {
+      recursionB(child, predicate);
+    }
+  }
+
+  function navigateTree(predicate) {
+    let currentRoot = setup.mapRoots[main.currentMap - 1];
+    recursionB(currentRoot, predicate);
+  }
+
+  function findNodeByProp(property, value) {
+    let returnNode = null;
+    
+    navigateTree(currentNode => {
+      if (currentNode[property] === value) {
+        returnNode = currentNode;
+      }
+    });
+    
+    return returnNode;
+  }
+  
+  function findNodeById(value) {
+    return findNodeByProp("id", value);
+  }
+  
   // check to see if node is a potential ancestor to another node
   function isAncestorTo(nodeIdA, nodeIdB) {
     let returnValue = false;
@@ -532,13 +588,9 @@ let interaction = {};
       return; // and because there's no children, we don't need to factor in anything else with paths
     }
     if (node.parentId === -1) { // the map root needs to branch right first before displaying its children
-      insertPathLine("r");
-      cursor.shift(1, 0);
-      insertPathLine("l");
+      makeLineInDirectionByUnits("r", 1);
     } else { // everything else branches down
-      insertPathLine("d");
-      cursor.shift(0, 1);
-      insertPathLine("u");
+      makeLineInDirectionByUnits("d", 1);
     }
     
     let prevAccumulator = { // to pass by reference, this needs to be an object!
@@ -551,28 +603,20 @@ let interaction = {};
       if (node.children.length > 1) { // when a parent has multiple children, we need to prepare horizontal lines and junction dots to make space for the children nodes
         if (i > 0) { // before making any of its siblings, we're going to need to move some columns over, and make the appropriate line
           // get width of previous' children
-          for (let j = 0; j < prevAccumulator.val; j++) { // each descendant needs to report in to the ancestor, so they know how many spaces to move to the right
-            insertPathLine("r");
-            cursor.shift(1, 0);
-            insertPathLine("l");
-          }
+          makeLineInDirectionByUnits("r", prevAccumulator.val); // each descendant needs to report in to the ancestor, so they know how many spaces to move to the right
         }
         insertJunctionDot(); // now that we're in the destination column, place the junction dot
-        insertPathLine("d"); // and a line length of 1 down
-        cursor.shift(0, 1);
-        insertPathLine("u");
+        makeLineInDirectionByUnits("d", 1);
         // TODO: do the proper method for dropping keys and locks, based on Mark's graphics
       } else if (node.parentId === -1) { // should a map begin with only one child, let's still include a junction dot
         insertJunctionDot();
-        insertPathLine("d"); // and the one line down
-        cursor.shift(0, 1);
-        insertPathLine("u");
+        makeLineInDirectionByUnits("d", 1);
       } // otherwise, don't include a junction dot
       let newNode = makeNode(child); // now time to make the node for this child
       
       // and now that this node has been created, we need to deal with its descendants
       // recursion
-      //if (child.type !== nodeType.lock || child.isUnlocked) { // only once this lock type has been unlocked
+      //if (child.type !== 5 || child.isUnlocked) { // only once this lock type has been unlocked
         let nChildren = { // now create accumulator for descendants
           val: 1 // needs to pass by reference, not value, otherwise there is no point
         };
@@ -593,6 +637,99 @@ let interaction = {};
     }
     
     centerCursorOnElement(elementId); // once all is said and done, return cursor to this node. This will allow all future branching and treemaking to use this node as the "root"
+  }
+  
+  // create children nodes and paths related to a node
+  function expandChildren(elementId, node, accumulator) {
+    centerCursorOnElement(elementId);
+    expandViewbox();
+    
+    // accumulator keeps track of the width of columns to report, so that the parent can scoot its siblings enough to the right to make space for all of its descendants
+    if (node.children.length === 0) {
+      accumulator.val = 1; // no children = width of itself, which is 1
+    }
+    
+    
+    
+    // first check to see if vines are to be made
+    // is this node part of a vine?
+    let toDoVines = false;
+    for (let i = 0; setup.mapVines && i < setup.mapVines.length; i++) {
+      let clusterDests = [];
+      if (setup.mapVines[i].includes(node.id)) { // if a vine cluster involves this node
+        toDoVines = true; // if we capture the node by ID, then let's hold that flag
+        clusterDests = setup.mapVines[i].filter(n => n !== node.id); // then let's hold onto the nodes that this vine is supposed to connect to
+      }
+      
+      if (clusterDests.length === 0) {
+        // bad data capture
+        continue;
+      }
+      
+      for (dest of clusterDests) {
+        //TODO: refactor to take all vine ends into account
+        
+        let destinationRaw = findNodeById(dest);
+        if (destinationRaw === null || destinationRaw.type === 0) { // if the node doesn't exist yet, ignore it
+          continue;
+        }
+        
+        if (isAncestorTo(destinationRaw.id, node.id)) {
+          //console.log("attempting to vine with ancestor!");
+          //TODO: make room for the new connection
+        } else {
+          //console.log("attempting to vine with cousin!");
+          // continue with this one
+          
+          // Now that we know whether this vine is being touched, we need to
+          // 1. move each related child down
+          // 2. move this column closer together
+          
+        }
+      }
+    }
+    
+    // if there's no children, we don't need to factor in anything else with paths after vines are done
+    if (node.children.length === 0) {
+      return; 
+    }
+    
+    if (node.parentId === -1) { // the map root needs to branch right first before displaying its children
+      makeLineInDirectionByUnits("r", 1);
+    } else { // everything else branches down
+      makeLineInDirectionByUnits("d", 1);
+    }
+    
+    for (let i = 0; i < node.children.length; i++) { // for each child, going down each generation for the firstborn before moving to the secondborn
+      let child = node.children[i];
+      
+      if (node.children.length > 1) { // when a parent has multiple children, we need to prepare horizontal lines and junction dots to make space for the children nodes
+        if (i > 0) { // before making any of its siblings, we're going to need to move some columns over, and make the appropriate line
+          // get width of previous' children
+          
+          
+          // TODO: fix column width based on descendants BUT ALSO based on 'relatives' and vines
+          
+          
+          makeLineInDirectionByUnits("r", prevAccumulator.val); // each descendant needs to report in to the ancestor, so they know how many spaces to move to the right
+          
+          
+        }
+        insertJunctionDot(); // now that we're in the destination column, place the junction dot
+        makeLineInDirectionByUnits("d", 1);
+        // TODO: do the proper method for dropping keys and locks, based on Mark's graphics
+        
+      } else if (node.parentId === -1) { // should a map begin with only one child, let's still include a junction dot
+        insertJunctionDot();
+        makeLineInDirectionByUnits("d", 1);
+      } // otherwise, don't include a junction dot
+      let newNode = makeNode(child); // now time to make the node for this child
+      
+      cursor.shift(0, -1); // and now that that's all finally done, step up one row
+    }
+    
+    
+    
   }
   
   // display map based on input parameter
@@ -632,6 +769,7 @@ let interaction = {};
       if (mapId !== 1) { // for anything besides the starting map, to make sure the START node will have interactivity
         setup.mapRoots[mapId - 1].expanded = true; // for all non-first maps, expand the map
         animateChildren(newNode.id, setup.mapRoots[mapId - 1], { val: 1 }); // and display all nodes as possible
+        //expandChildren(newNode.id, setup.mapRoots[mapId - 1], { val: 1 });
       }
     } else { // if map has already been created
       // move next map to front
@@ -722,7 +860,7 @@ let interaction = {};
       }
       
       // recursion
-      if (child.type !== nodeType.lock || child.isUnlocked) {
+      if (child.type !== 5 || child.isUnlocked) {
         let nChildren = {
           val: 1
         };
@@ -861,10 +999,9 @@ let interaction = {};
     if (main.goRandom && [7, 8].includes(currentNode.type)) {
       currentNode.type = 9;
     }
-    
     // do different things based on the node type
-    switch(currentNode.type) {
-      case 1: // starting node
+    switch(nodeType[currentNode.type]) {
+      case "start": // starting node
         groupObject.id += "goal" + currentNode.id; // add specific data about node to ID
         shapeObject = goal_template.cloneNode(true); // circle
         hoverShape = goal_template.cloneNode(true); // circle
@@ -878,7 +1015,7 @@ let interaction = {};
           titleText = "START"; // standard title text
         }
         break;
-      case 14: // another node, "other" but circle
+      case "another": // another node, "other" but circle
         groupObject.id += "goal" + currentNode.id; // add specific data about node to ID
         shapeObject = goal_template.cloneNode(true); // circle
         hoverShape = goal_template.cloneNode(true); // circle
@@ -886,16 +1023,16 @@ let interaction = {};
         hoverCapture = doNothing; // assign hover method
         clickCapture = doNothing; // assign click method
         break;
-      case 13: // ending node
+      case "end": // ending node
         groupObject.id += "end" + currentNode.id; // add specific data about node to ID
-        shapeObject = end_template.cloneNode(true); // circle
-        hoverShape = end_template.cloneNode(true); // circles
+        shapeObject = end_template.cloneNode(true); // octagon
+        hoverShape = end_template.cloneNode(true); // octagon
         imageClass = ""; // no image needed, so no special effects needed
         hoverCapture = doNothing; // assign hover method
         clickCapture = doNothing; // assign click method
         titleText = "END"; // standard title text
         break;
-      case 2: // elevator access
+      case "elevator": // elevator access
         groupObject.id += "goal" + currentNode.id; // add specific data about node to ID
         shapeObject = goal_template.cloneNode(true); // circle
         hoverShape = goal_template.cloneNode(true); // circle
@@ -909,7 +1046,7 @@ let interaction = {};
           fillColor = "#" + areaData[main.workingData.find(n => n.id === currentNode.pointsToElevatorId).mapId].color; // get color of target elevator
         }// otherwise, fall back onto the data-given label
         break;
-      case 3: // boss battle
+      case "boss": // boss battle
         groupObject.id += "goal" + currentNode.id; // add specific data about node to ID
         shapeObject = goal_template.cloneNode(true); // circle
         hoverShape = goal_template.cloneNode(true); // circle
@@ -918,7 +1055,7 @@ let interaction = {};
         hoverCapture = hoverBasic; // assign hover method
         clickCapture = unlock; // assign click method
         break;
-      case 5: // lock
+      case "lock": // lock
         groupObject.id += "lock" + currentNode.id; // add specific data about node to ID
         shapeObject = lock_template.cloneNode(true); // square
         hoverShape = lock_template.cloneNode(true); // square
@@ -935,7 +1072,7 @@ let interaction = {};
         hoverCapture = hoverBasic; // assign hover method
         clickCapture = unlock; // assign click method
         break;
-      case 12: // access
+      case "access": // access
         groupObject.id += "access" + currentNode.id; // add specific data about node to ID
         shapeObject = access_template.cloneNode(true); // hexagon
         hoverShape = access_template.cloneNode(true); // hexagon
@@ -945,7 +1082,7 @@ let interaction = {};
         hoverCapture = hoverBasic; // assign hover method
         clickCapture = unlock; // assign click method
         break;
-      case 8: // required key
+      case "key": // required key
         groupObject.id += "unclaimed-key" + currentNode.id; // add specific data about node to ID
         shapeObject = key_template.cloneNode(true); // diamond
         hoverShape = key_template.cloneNode(true); // diamond
@@ -954,7 +1091,7 @@ let interaction = {};
         hoverCapture = hoverBasic; // assign hover method
         clickCapture = assignKey; // assign click method
         break;
-      case 9: // required key (blank)
+      case "empty": // required key (blank)
         groupObject.id += "unclaimed-key" + currentNode.id; // add specific data about node to ID
         shapeObject = key_template.cloneNode(true); // diamond
         hoverShape = key_template.cloneNode(true); // diamond
@@ -962,9 +1099,9 @@ let interaction = {};
         hoverCapture = hoverBasic; // assign hover method
         clickCapture = assignKey; // assign click method
         break;
-      case 4: // save room
-      case 7: // unrequired key
-      case 10: // other node, "other" but wedge
+      case "save": // save room
+      case "unreq": // unrequired key
+      case "other": // other node, "other" but wedge
         groupObject.id += "unreq" + currentNode.id; // add specific data about node to ID
         shapeObject = unreq_template.cloneNode(true); // wedge
         hoverShape = unreq_template.cloneNode(true); // wedge
@@ -982,7 +1119,7 @@ let interaction = {};
           clickCapture = doNothing; // assign click method
         }
         break;
-      case 11: // slot node
+      case "slot": // slot node
         groupObject.id += "slot" + currentNode.id; // add specific data about node to ID
         shapeObject = slot_template.cloneNode(true); // pentagon
         hoverShape = slot_template.cloneNode(true); // pentagon
@@ -991,7 +1128,7 @@ let interaction = {};
         hoverCapture = hoverBasic; // assign hover method
         clickCapture = assignKey; // assign click method
         break;
-      case 6: // one-way arrow
+      case "oneway": // one-way arrow
         groupObject.id += "oneway" + currentNode.id; // add specific data about node to ID
         // to save on space, we are going to use the "textFill" property to determine the direction for our one-way arrows
         if (currentNode.textFill === "up") { // up
@@ -1011,7 +1148,7 @@ let interaction = {};
         hoverCapture = hoverBasic; // assign hover method
         clickCapture = doNothing; // assign click method
         break;
-      case 0:
+      case "none":
       default:
         shapeEnum = iconType.none; // in case all fails, we need a catch-all
     }
@@ -1043,7 +1180,7 @@ let interaction = {};
         textObject.innerHTML = titleText;
       } else if (currentNode.numReqd > 1 && (currentNode.type === 5 || currentNode.type === 12)) { // display required value
         textObject.classList.add("required-text"); // apply the right style
-        textObject.innerHTML = "Required: " + currentNode.numReqd;
+        textObject.innerHTML = "Req: " + currentNode.numReqd;
       } else if (currentNode.numReqd > 1) { // display required value
         textObject.classList.add("required-text"); // apply the right style
         textObject.setAttribute("y", "0"); // no vertical offset
@@ -1086,13 +1223,13 @@ let interaction = {};
     
     // now based on the existence of a text and an image, we need to apply them to the group, with appropriate spacing
     if (textObject && imageObject && currentNode.type !== 9) { // for every shape where we have and image and text that ISN'T an "empty" node type
-      if ([7, 8].includes(currentNode.type)) { // for keys
+      if ([7, 8].includes(currentNode.type) && main.allowColor) { // for keys unless colorblind
         textObject.setAttribute("fill", "white");
       } else { // this should apply for all other shape types
         textObject.setAttribute("fill", "black");
       }
-      imageObject.setAttribute("y", "-48"); // offset image to be higher
-      textObject.setAttribute("y", "29"); // offset text to be lower
+      //imageObject.setAttribute("y", "-28"); // offset image to be higher
+      textObject.setAttribute("y", "39"); // offset text to be lower
       groupObject.appendChild(imageObject); // then add to the group
       groupObject.appendChild(textObject); // in the right order
     } else if (imageObject) { // no text, just apply image with current offset
@@ -1162,10 +1299,14 @@ let interaction = {};
     if (currentNode.type === 2 && currentNode.parent !== -1) {
       let escapeArrow = arrow_down_template.cloneNode(true); // copy a down arrow
       escapeArrow.removeAttribute("id"); // remove Id to prevent DOM troubles
-      let arrowFill = areaData[currentNode.mapId].color; // use the map's color for the arrow
-      let destination = main.workingData.find(n => n.id === currentNode.pointsToElevatorId); // find the destination node to grab the map data
-      if (destination !== undefined) { // if we can find it, use that map's color
-        arrowFill = areaData[destination.mapId].color;
+      // use the map's color for the arrow unless using colorblind mode
+      let arrowFill = "ffffff"; // default for colorblind mode
+      if (main.allowColors) {
+        arrowFill = areaData[currentNode.mapId].color; // grab the map color
+        let destination = main.workingData.find(n => n.id === currentNode.pointsToElevatorId); // find the destination node to grab the map data
+        if (destination !== undefined) { // if we can find it, use that map's color
+          arrowFill = areaData[destination.mapId].color;
+        }
       }
       escapeArrow.setAttribute("fill", "#" + arrowFill); // apply the color
       let lastLine;
@@ -1177,25 +1318,30 @@ let interaction = {};
         lastLine = insertPathLine("u", cursor.get().x, (cursor.get().y + 144));
       }
       escapeArrow.setAttribute("transform", "translate(0 144)"); // place some distance south of the elevator
-      // color last line according to new map color
-      // using a gradient
-      let newGradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
-      newGradient.setAttribute("id", "Gradient" + (numGradsAlready + 1));
-      newGradient.setAttribute("x1", 0);
-      newGradient.setAttribute("x2", 0);
-      newGradient.setAttribute("y1", 0);
-      newGradient.setAttribute("y2", 1);
-      let stop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-      stop1.setAttribute("offset", "0%");
-      stop1.setAttribute("stop-color", "#" + areaData[currentNode.mapId].color);
-      let stop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-      stop2.setAttribute("offset", "100%");
-      stop2.setAttribute("stop-color", "#" + arrowFill);
-      newGradient.appendChild(stop1);
-      newGradient.appendChild(stop2);
-      getCurrentMapElement("defs").appendChild(newGradient);
-      numGradsAlready++;
-      lastLine.children[0].setAttribute("fill", "url(#" + newGradient.id + ")");
+      // color last line according to new map color unless using colorblind mode
+      if (main.allowColors) {
+        // using a gradient
+        let newGradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
+        newGradient.setAttribute("id", "Gradient" + (numGradsAlready + 1));
+        newGradient.setAttribute("x1", 0);
+        newGradient.setAttribute("x2", 0);
+        newGradient.setAttribute("y1", 0);
+        newGradient.setAttribute("y2", 1);
+        let stop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+        stop1.setAttribute("offset", "0%");
+        stop1.setAttribute("stop-color", "#" + areaData[currentNode.mapId].color);
+        let stop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+        stop2.setAttribute("offset", "100%");
+        stop2.setAttribute("stop-color", "#" + arrowFill);
+        newGradient.appendChild(stop1);
+        newGradient.appendChild(stop2);
+        getCurrentMapElement("defs").appendChild(newGradient);
+        numGradsAlready++;
+        lastLine.children[0].setAttribute("fill", "url(#" + newGradient.id + ")");
+      } else {
+        lastLine.children[0].setAttribute("fill", "#ffffff");
+      }
+      
       groupObject.appendChild(escapeArrow);
     }
     
@@ -1262,7 +1408,7 @@ let interaction = {};
     play.setAttribute("viewBox", newViewBox.join(' '));
   }
   
-  interaction.navigateTree = navigateTree;
   interaction.popMap = popMap;
   interaction.zoom = zoom;
+  interaction.navigateTree = navigateTree;
 })();

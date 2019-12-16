@@ -338,6 +338,7 @@ const rawData = [
     "numReqd": 0,
     "canBeSBd": false,
     "mapId": 1,
+    "passCode": 1,
     "pointsToElevatorId": -1
   }, {
     "id": 26,
@@ -689,6 +690,7 @@ const rawData = [
     "numReqd": 0,
     "canBeSBd": false,
     "mapId": 2,
+    "passCode": 1,
     "pointsToElevatorId": -1
   }, {
     "id": 53,
@@ -961,7 +963,7 @@ const rawData = [
     "screenshot": "",
     "textFill": "",
     "textOuter": "",
-    "numReqd": 0,
+    "numReqd": 15,
     "canBeSBd": false,
     "mapId": 3,
     "pointsToElevatorId": -1

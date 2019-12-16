@@ -1,10 +1,52 @@
 let setup = {
   root: null,
   mapRoots: [],
-  mapVines: []
+  mapVines: [],
+  mapRelatives: []
 };
 
 (function() {
+  function sortingNumbers(a, b) {
+    return a - b;
+  }
+  
+  function sortingIds(a, b) {
+    return a.id - b.id;
+  }
+  
+  function sortingNodes(a, b) {
+    let returnValue = 0;
+    let compiledArray = [];
+    let interimArray = [];
+    let properOrder = [13, 1, 12, 5, 6, 11, 8, 3, 7, 9, 2, 4, 14, 10, 0];
+    for (let i = 0; i < properOrder.length; i++) {
+      interimArray[i] = [];
+    }
+    interimArray[a.type].push(a);
+    interimArray[b.type].push(b);
+    interimArray[a.type].sort(sortingIds);
+    if (a.type !== b.type) {
+      interimArray[b.type].sort(sortingIds);
+      console.log(interimArray);
+    }
+    
+    for (let i = 0; i < properOrder.length; i++) {
+      compiledArray = [...compiledArray, ...interimArray[properOrder[i]]];
+    }
+    
+    // TODO: include the "relative" ties to minimize vine length
+    //setup.mapRelatives
+    
+    
+    if (compiledArray[0].id === a.id) {
+      returnValue = -1;
+    } else {
+      returnValue = 1;
+    }
+    
+    return returnValue;
+  }
+  
   // obtain list of all children to current node
   function listConnections(currentNode) {
     return main.workingData.filter(node => node.parentId === currentNode.id);
@@ -18,20 +60,17 @@ let setup = {
     let candidates = listConnections(currentNode); // obtain all children to current node
     // cycle through all children
     for (candidate of candidates) {
-      if (!candidate.hasOwnProperty("parents")) {
-        candidate.parents = []; // allow children to have multiple parents for multiple paths
-      }
-      candidate.parents.push(currentNode); // add current node to child's parent list
+      candidate.parent = currentNode; // add current node to child's parent list
       
       // for cases when a connection needs to be made to another part of the map without children to create that connection
       if (candidate.cousinsTo && Array.isArray(candidate.cousinsTo) && candidate.cousinsTo.length > 0) {
         let newArray = [candidate.id, ...candidate.cousinsTo]; // create vine connecting current child to its cousins, by node ID
-        newArray = newArray.sort((a, b) => a - b); // sort by ID, earliest first
+        newArray = newArray.sort(sortingNumbers); // sort by ID, earliest first
         // predicate is needed because otherwise JS will interpret each number as a string
         
         // search to make sure new vine is not a duplicate
         let notFound = true; // flag for determining duplication
-        for(const cluster of setup.mapVines) {
+        for (const cluster of setup.mapVines) {
           // to make the comparison, convert each array into a string and compare
           // NOTE: this only works because the array elements are all numbers only!
           notFound = cluster.toString() !== newArray.toString();
@@ -39,6 +78,58 @@ let setup = {
         }
         if (notFound) { // if after all that, the would-be vine is not a duplicate, then add it to the array of vines, for good
           setup.mapVines.push(newArray);
+          
+          
+          
+          // and now to find out which relatives need to remember when NOT to scoot to the right when calculating space for children (in case of shared children)
+          // To do this, we need to find common ancestors
+          let ancestryLines = [];
+          let shortestLine = -1;
+          let shortestLength = 99;
+          let commonAncestor = -1;
+          let relatives = [];
+          for (let i = 0; i < newArray.length; i++) {
+            ancestryLines[i] = [];
+            ancestryLines[i].push(newArray[i]);
+            let currentNodeA = main.workingData.find(n => n.id === newArray[i]);
+            for (; currentNodeA.parentId !== -1; currentNodeA = main.workingData.find(n => n.id === currentNodeA.parentId)) {
+              ancestryLines[i].unshift(currentNodeA.id);
+            }
+            if (ancestryLines[i].length < shortestLength) {
+              shortestLength = ancestryLines[i].length;
+              shortestLine = i;
+            }
+          }
+          
+          for (let i = 0; i < shortestLength; i++) {
+            let breakOut = false;
+            for (let j = 1; j < ancestryLines.length; j++) {
+              if (ancestryLines[0][i] !== ancestryLines[j][i]) {
+                for (let k = 0; k < ancestryLines.length; k++) {
+                  relatives.push(ancestryLines[k][i]);
+                }
+                commonAncestor = ancestryLines[0][i - 1];
+                breakOut = true;
+                break;
+              }
+            }
+            if (breakOut) {
+              break;
+            }
+          }
+          
+          relatives = relatives.sort(sortingNumbers);
+          
+          let relativeNotFound = true;
+          for (const relations of setup.mapRelatives) {
+            notFound = relations.toString() !== relatives.toString();
+          }
+          if (relativeNotFound) {
+            setup.mapRelatives.push(relatives);
+          }
+          
+          
+          
         }
       }
       
@@ -51,11 +142,12 @@ let setup = {
         // Once all siblings of a generation are complete, then the torch is passed back to the parent, and its next sibling is processed.
       }
     }
+    currentNode.children = currentNode.children.sort(sortingNodes);
   }
 
   function makeTree() {
     // get all starting points for each map
-    setup.mapRoots = main.workingData.filter(node => node.type === nodeType.start);
+    setup.mapRoots = main.workingData.filter(node => node.type === 1);
     setup.root = setup.mapRoots[0]; // grab starting map as root of all maps
     
     for (const mapRoot of setup.mapRoots) {
