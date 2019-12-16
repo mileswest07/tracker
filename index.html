@@ -3,7 +3,7 @@
 <head>
 <title>Average Tracker</title>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- <meta name="Keywords" content=""> -->
 <!-- <meta name="Description" content=""> -->
 <!-- <link rel="icon" href="/favicon.ico" type="image/x-icon"> -->
@@ -75,6 +75,9 @@
   <script src="js/areaData.js" type="text/javascript"></script>
   <script src="js/bossData.js" type="text/javascript"></script>
   <script src="js/rawData.js" type="text/javascript"></script>
+  <script src="js/cursor.js" type="text/javascript"></script>
+  <script src="js/setup.js" type="text/javascript"></script>
+  <script src="js/interaction.js" type="text/javascript"></script>
   <script src="js/main.js" type="text/javascript"></script>
   <!--[if lt IE 9]>
     <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
@@ -83,7 +86,7 @@
   
   <script type="text/javascript">
     document.addEventListener("DOMContentLoaded", () => {
-      main.init();
+      main.init(); // setup
       
       function zoom(e) {
         let play = document.getElementById("mapSVG-" + main.currentMap);
