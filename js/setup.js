@@ -23,19 +23,40 @@ let setup = {
       interimArray[i] = [];
     }
     interimArray[a.type].push(a);
-    interimArray[b.type].push(b);
+    
+    // place 'relatives' all next to each other
+    let relativesNotSelected = true;
+    for (let i = 0; i < setup.mapRelatives.length; i++) {
+      if (setup.mapRelatives[i].includes(a.id) && setup.mapRelatives[i].includes(b.id)) {
+        console.log('relatives found for', setup.mapRelatives[i]);
+        interimArray[a.type].push(b);
+        relativesNotSelected = false;
+      } else if (setup.mapRelatives[i].includes(a.id)) {
+        if (setup.mapRelatives[i].indexOf(a.id) !== 0) {
+          return setup.mapRelatives[i][0] - b.id;
+        } else {
+          return setup.mapRelatives[i][1] - b.id;
+        }
+      } else if (setup.mapRelatives[i].includes(b.id)) {
+        if (setup.mapRelatives[i].indexOf(b.id) !== 0) {
+          return a.id - setup.mapRelatives[i][0];
+        } else {
+          return a.id - setup.mapRelatives[i][1];
+        }
+      }
+    }
+    if (relativesNotSelected) {
+      interimArray[b.type].push(b);
+    }
+    
     interimArray[a.type].sort(sortingIds);
     if (a.type !== b.type) {
       interimArray[b.type].sort(sortingIds);
-      console.log(interimArray);
     }
     
     for (let i = 0; i < properOrder.length; i++) {
       compiledArray = [...compiledArray, ...interimArray[properOrder[i]]];
     }
-    
-    // TODO: include the "relative" ties to minimize vine length
-    //setup.mapRelatives
     
     
     if (compiledArray[0].id === a.id) {
@@ -142,7 +163,11 @@ let setup = {
         // Once all siblings of a generation are complete, then the torch is passed back to the parent, and its next sibling is processed.
       }
     }
+    
     currentNode.children = currentNode.children.sort(sortingNodes);
+    
+    // moving relatives close together
+    
   }
 
   function makeTree() {

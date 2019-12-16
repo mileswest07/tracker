@@ -417,18 +417,6 @@ let interaction = {};
     }
     
     let maxHeight = sourceCoords[1] > destCoords[1] ? sourceCoords[1] : destCoords[1];
-    let meatyBits = getCurrentMapElement("mainMeat").children;
-    
-    for (child of meatyBits) {
-      let childCoords = getCurrentCoordsOfNode(child);
-      if (earlierCoords[0] < childCoords[0] && childCoords[0] < laterCoords[0]) {
-        // now in an area between the source and the destination columns
-        if (childCoords[1] > maxHeight) {
-          maxHeight = childCoords[1]; //TODO: what if there are sibling paths underneath the intended cousins?
-        }
-      }
-    }
-    
     maxHeight += 144; // add one more space in order to clear the last row in each column
     
     // calculate drop distance for source node
@@ -585,6 +573,19 @@ let interaction = {};
     // accumulator keeps track of the width of columns to report, so that the parent can scoot its siblings enough to the right to make space for all of its descendants
     if (node.children.length === 0) {
       accumulator.val = 1; // no children = width of itself, which is 1
+    }
+    
+    let toDoVines = false;
+    for (let i = 0; setup.mapVines && i < setup.mapVines.length; i++) {
+      if (setup.mapVines[i].includes(node.id)) { // if a vine cluster involves this node
+        toDoVines = true;
+        if (node.children.length === 1) {
+          makeLineInDirectionByUnits("d", 1);
+        }
+      }
+    }
+    
+    if (node.children.length === 0) {
       return; // and because there's no children, we don't need to factor in anything else with paths
     }
     if (node.parentId === -1) { // the map root needs to branch right first before displaying its children
@@ -600,10 +601,28 @@ let interaction = {};
     
     for (let i = 0; i < node.children.length; i++) { // for each child, going down each generation for the firstborn before moving to the secondborn
       let child = node.children[i];
+      let vineWidth = 0;
       if (node.children.length > 1) { // when a parent has multiple children, we need to prepare horizontal lines and junction dots to make space for the children nodes
         if (i > 0) { // before making any of its siblings, we're going to need to move some columns over, and make the appropriate line
           // get width of previous' children
-          makeLineInDirectionByUnits("r", prevAccumulator.val); // each descendant needs to report in to the ancestor, so they know how many spaces to move to the right
+          
+          let revisedWidth = prevAccumulator.val;
+          for (let j = 0; j < setup.mapRelatives.length; j++) {
+            let nextIndex = 0;
+            if (setup.mapRelatives[j].indexOf(child.id) !== -1) {
+              nextIndex = setup.mapRelatives[j].indexOf(child.id);
+              if (setup.mapRelatives[j].indexOf(node.children[i - 1].id) === nextIndex - 1) {
+                if (prevAccumulator.val > 1) {
+                  vineWidth++;
+                }
+                revisedWidth = 1;
+              }
+              break;
+            }
+          }
+          
+          
+          makeLineInDirectionByUnits("r", revisedWidth); // each descendant needs to report in to the ancestor, so they know how many spaces to move to the right
         }
         insertJunctionDot(); // now that we're in the destination column, place the junction dot
         makeLineInDirectionByUnits("d", 1);
@@ -622,10 +641,8 @@ let interaction = {};
         };
         animateChildren(newNode.id, child, nChildren); // recursive method
         let vinesDone = attemptVines(newNode.id, child); // now that that is done for all descendants, let's try creating vines
-        if (vinesDone && child.children.length === 1) { // in the fringe case where a vine is inserted where there is otherwise only a single child, we're going to need to move the branch down one and add a junction dot
-          //shiftNode(child.children[0].id, 0, 1);
-        }
         prevAccumulator = nChildren; // replace previous accumulator with the currently-updated one (from this node's descendants) to pass on to the sibling
+        prevAccumulator.val += vineWidth;
         accumulator.val += nChildren.val - 1; // add the extra columns before returning to ancestor
       //}
       
@@ -659,6 +676,8 @@ let interaction = {};
       if (setup.mapVines[i].includes(node.id)) { // if a vine cluster involves this node
         toDoVines = true; // if we capture the node by ID, then let's hold that flag
         clusterDests = setup.mapVines[i].filter(n => n !== node.id); // then let's hold onto the nodes that this vine is supposed to connect to
+        makeLineInDirectionByUnits("d", 1);
+        insertJunctionDot();
       }
       
       if (clusterDests.length === 0) {
