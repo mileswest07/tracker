@@ -1,4 +1,6 @@
-let main = {};
+let main = {
+  currentMap: 1, // start at map 1 no matter which game is selected
+};
 
 (function() {
   let numMapsReady = 5; // TODO: phase this out
@@ -22,9 +24,9 @@ let main = {};
 
   function init() {
     main.currentGame = games.m; // TODO: swap games when HUD is made
-    main.currentMap = 1; // start at map 1 no matter which game is selected
     main.goRandom = false; // TODO: select whether vanilla or randomized
     main.allowColors = true; // TODO; colorblind option
+    main.workingData = rawData; // TODO: make it game-dependent
     setup.makeTree(); // construct data tree
     // at this point, the data tree should be complete, with vine data on the side. No visuals have been processed yet.
     cursor.move(0, 0); // a behind-the-scenes pointer set to the origin point of the chart (where the START node is)
@@ -67,6 +69,5 @@ let main = {};
   
   main.debugTree = debugTree;
   main.init = init;
-  main.workingData = rawData; // TODO: make it game-dependent
   main.resizeCanvas = resizeCanvas;
 })();

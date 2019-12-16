@@ -475,10 +475,10 @@ let interaction = {};
   // now let's make some vines in graphic form
   function attemptVines(elementId, node) {
     let returnValue = false;
-    for (let i = 0; setup.mapVines[main.currentMap - 1] && i < setup.mapVines[main.currentMap - 1].length; i++) { // let's go through every vine cluster in the databank to see if we need to make one right now
+    for (let i = 0; setup.mapVines && i < setup.mapVines.length; i++) { // let's go through every vine cluster in the databank to see if we need to make one right now
       let clusterDests = [];
-      if (setup.mapVines[main.currentMap - 1][i].includes(node.id)) { // if a vine cluster involves this node
-        clusterDests = setup.mapVines[main.currentMap - 1][i].filter(n => n !== node.id); // then let's hold onto the nodes that this vine is supposed to connect to
+      if (setup.mapVines[i].includes(node.id)) { // if a vine cluster involves this node
+        clusterDests = setup.mapVines[i].filter(n => n !== node.id); // then let's hold onto the nodes that this vine is supposed to connect to
       }
       
       if (clusterDests.length === 0) {
@@ -605,7 +605,7 @@ let interaction = {};
     if (mapSearch === null) { // if the map hasn't been made, then let's make it
       // TODO: this could all be done more cleanly...
       mapSearch = document.createElementNS("http://www.w3.org/2000/svg", "svg"); // create SVG container
-      mapSearch.setAttribute("id", "mapSVG-" + main.currentMap);
+      mapSearch.setAttribute("id", "mapSVG-" + mapId);
       mapSearch.setAttribute("class", "map-svg");
       mapSearch.setAttribute("width", "100%");
       mapSearch.setAttribute("height", "100%");
@@ -628,14 +628,14 @@ let interaction = {};
       mapSource.appendChild(mapSearch);
       
       // create map panel root/starting node
-      let newNode = makeNode(setup.mapRoots[main.currentMap - 1], 0, 0);
-      if (main.currentMap !== 1) { // for anything besides the starting map, to make sure the START node will have interactivity
-        setup.mapRoots[main.currentMap - 1].expanded = true; // for all non-first maps, expand the map
-        animateChildren(newNode.id, setup.mapRoots[main.currentMap - 1], { val: 1 }); // and display all nodes as possible
+      let newNode = makeNode(setup.mapRoots[mapId - 1], 0, 0);
+      if (mapId !== 1) { // for anything besides the starting map, to make sure the START node will have interactivity
+        setup.mapRoots[mapId - 1].expanded = true; // for all non-first maps, expand the map
+        animateChildren(newNode.id, setup.mapRoots[mapId - 1], { val: 1 }); // and display all nodes as possible
       }
     } else { // if map has already been created
       // move next map to front
-      showMap(main.currentMap);
+      showMap(mapId);
     }
     // with the map shown, reset cursor to the root/starting node
     cursor.move(0, 0);
@@ -665,9 +665,9 @@ let interaction = {};
     if (dataNode.id !== setup.mapRoots[0].id) {
       let destNode = main.workingData.find(entry => entry.id === dataNode.pointsToElevatorId); // first, let's see if we can find the raw data that this is supposed to connect to
       if (destNode === undefined) { // if we cannot, then we are missing a parent map (or pointsToElevatorId points to a map that isn't existent)
-        console.log("Previous map not implemented, somehow");
+        console.error("Previous map not implemented, somehow");
       } else {
-        console.log("would open map to", areaData[destNode.mapId].name); // if we found the data, then consoleout the intended map name
+        //console.log("would open map to", areaData[destNode.mapId].name); // if we found the data, then consoleout the intended map name
         popMap(destNode.mapId); // and then display the map panel
       }
     }
@@ -686,10 +686,10 @@ let interaction = {};
     }
     let nextRoot = main.workingData.find(entry => entry.id === retrievedNode.pointsToElevatorId); // find the destination node
     if (nextRoot === undefined) {
-      console.log("Next map not implemented");
+      //console.log("Next map not implemented");
       return;
     }
-    console.log("would open map to", areaData[nextRoot.mapId].name);
+    //console.log("would open map to", areaData[nextRoot.mapId].name);
     popMap(nextRoot.mapId); // open map panel
   }
   
@@ -904,7 +904,7 @@ let interaction = {};
         clickCapture = clickElevator; // assign click method
         // if not yet implemented
         if (currentNode.pointsToElevatorId !== -1) {
-          console.log(currentNode);
+          //console.log(currentNode);
           titleText = areaData[main.workingData.find(n => n.id === currentNode.pointsToElevatorId).mapId].name.toUpperCase(); // display destination name
           fillColor = "#" + areaData[main.workingData.find(n => n.id === currentNode.pointsToElevatorId).mapId].color; // get color of target elevator
         }// otherwise, fall back onto the data-given label
@@ -1220,6 +1220,49 @@ let interaction = {};
     return document.getElementById(groupObject.id);
   }
   
+  function zoom(e) {
+    let play = document.getElementById("mapSVG-" + main.currentMap);
+    let viewBoxAttr = play.getAttribute("viewBox");
+    let viewBoxProps = viewBoxAttr.split(' ');
+    let oldX = parseFloat(viewBoxProps[0]);
+    let oldY = parseFloat(viewBoxProps[1]);
+    let oldWidth = parseFloat(viewBoxProps[2]);
+    let oldHeight = parseFloat(viewBoxProps[3]);
+    let centerX = e.clientX;
+    let centerY = e.clientY;
+    
+    if (e.target !== play) {
+      centerX = parseInt(e.target.parentElement.attributes.transform.value.match(/\d+/g)[0]);
+      centerY = parseInt(e.target.parentElement.attributes.transform.value.match(/\d+/g)[1]);
+    }
+    
+    if (e.deltaY > 0) {
+      // scroll down, so zoom out
+      newWidth = oldWidth * 2.0;
+      newHeight = oldHeight * 2.0;
+    } else {
+      // scroll up, so zoom in
+      newWidth = oldWidth / 2.0;
+      newHeight = oldHeight / 2.0;
+    }
+    newX = centerX - newWidth / 2.0;
+    newY = centerY - newHeight / 2.0;
+    if (newX <= 0) {
+      newX = 0;
+    }
+    if (newY <= 0) {
+      newY = 0;
+    }
+    let newViewBox = [
+      newX,
+      newY,
+      newWidth,
+      newHeight
+    ];
+    play.setAttribute("viewBox", newViewBox.join(' '));
+  }
+  
   interaction.navigateTree = navigateTree;
   interaction.popMap = popMap;
+  interaction.zoom = zoom;
 })();

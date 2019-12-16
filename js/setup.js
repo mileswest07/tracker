@@ -1,10 +1,10 @@
-let setup = {};
+let setup = {
+  root: null,
+  mapRoots: [],
+  mapVines: []
+};
 
 (function() {
-  let root = null;
-  let mapRoots = [];
-  let mapVines = [];
-
   // obtain list of all children to current node
   function listConnections(currentNode) {
     return main.workingData.filter(node => node.parentId === currentNode.id);
@@ -25,32 +25,20 @@ let setup = {};
       
       // for cases when a connection needs to be made to another part of the map without children to create that connection
       if (candidate.cousinsTo && Array.isArray(candidate.cousinsTo) && candidate.cousinsTo.length > 0) {
-        if (!(mapVines[currentNode.mapId - 1] && Array.isArray(mapVines[currentNode.mapId - 1]) && mapVines[currentNode.mapId - 1].length > 0)) {
-          mapVines[currentNode.mapId - 1] = []; // create a "vine" connection
-        }
         let newArray = [candidate.id, ...candidate.cousinsTo]; // create vine connecting current child to its cousins, by node ID
-        let newerArray = newArray.sort(); // sort by ID, earliest first
+        newArray = newArray.sort((a, b) => a - b); // sort by ID, earliest first
+        // predicate is needed because otherwise JS will interpret each number as a string
         
         // search to make sure new vine is not a duplicate
         let notFound = true; // flag for determining duplication
-        for(const cluster of mapVines[currentNode.mapId - 1]) {
-          if (cluster.length !== newerArray.length) { // if vines are not the same length, ignore it and move to the next; can't be duplicate
-            continue;
-          }
-          // if we get here, then we found a potential match just based on the length of the vine
-          let lengthMatches = 0; // counter for matching IDs in that vine
-          for (let k = 0; k < cluster.length; k++) {
-            if (cluster[k] === newerArray[k]) { // matching IDs
-              lengthMatches++; // if there's an ID match, then increase the counter
-            }
-          }
-          if (lengthMatches === newerArray.length) { // if the counter of correct matches matches the whole length of the vine, then it's a verified duplicate
-            notFound = false;
-          }
+        for(const cluster of setup.mapVines) {
+          // to make the comparison, convert each array into a string and compare
+          // NOTE: this only works because the array elements are all numbers only!
+          notFound = cluster.toString() !== newArray.toString();
           // otherwise it's not a match, ignore and move to the next possible vine
         }
         if (notFound) { // if after all that, the would-be vine is not a duplicate, then add it to the array of vines, for good
-          mapVines[currentNode.mapId - 1].push(newerArray);
+          setup.mapVines.push(newArray);
         }
       }
       
@@ -75,11 +63,8 @@ let setup = {};
       let currentNode = mapRoot; // start at map node
       recursionA(currentNode, mapNodes); // cycle through for each node starting at map node
     }
-    console.log(setup.mapRoots);
+    //console.log(setup.mapRoots);
   }
   
-  setup.root = root;
-  setup.mapRoots = mapRoots;
-  setup.mapVines = mapVines;
   setup.makeTree = makeTree;
 })();

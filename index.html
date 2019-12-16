@@ -60,9 +60,9 @@
   </section>
   <section id="hiddenSpriteSheet">
     <img src="images/util/m1_grid.png" id="grid_m1" width="24" height="24">
-    <img src="images/util/m1_grid.png" id="grid_zm" width="24" height="24">
-    <img src="images/util/m2_grid.png" id="grid_m2" width="24" height="24">
-    <img src="images/util/m2_grid.png" id="grid_sr" width="24" height="24">
+    <img src="images/util/m1_grid.png" id="grid_mzm" width="24" height="24">
+    <img src="images/util/m2_grid.png" id="grid_m2ros" width="24" height="24">
+    <img src="images/util/m2_grid.png" id="grid_msr" width="24" height="24">
     <img src="images/util/sm_grid.png" id="grid_sm" width="48" height="48">
     <img src="images/util/mf_grid.png" id="grid_mf" width="24" height="24">
     <img src="images/util/mp_grid.png" id="grid_mp" width="24" height="24">
@@ -88,52 +88,10 @@
     document.addEventListener("DOMContentLoaded", () => {
       main.init(); // setup
       
-      function zoom(e) {
-        let play = document.getElementById("mapSVG-" + main.currentMap);
-        let viewBoxAttr = play.getAttribute("viewBox");
-        let viewBoxProps = viewBoxAttr.split(' ');
-        let oldX = parseFloat(viewBoxProps[0]);
-        let oldY = parseFloat(viewBoxProps[1]);
-        let oldWidth = parseFloat(viewBoxProps[2]);
-        let oldHeight = parseFloat(viewBoxProps[3]);
-        let centerX = e.clientX;
-        let centerY = e.clientY;
-        
-        if (e.target !== play) {
-          centerX = parseInt(e.target.parentElement.attributes.transform.value.match(/\d+/g)[0]);
-          centerY = parseInt(e.target.parentElement.attributes.transform.value.match(/\d+/g)[1]);
-        }
-        
-        if (e.deltaY > 0) {
-          // scroll down, so zoom out
-          newWidth = oldWidth * 2.0;
-          newHeight = oldHeight * 2.0;
-        } else {
-          // scroll up, so zoom in
-          newWidth = oldWidth / 2.0;
-          newHeight = oldHeight / 2.0;
-        }
-        newX = centerX - newWidth / 2.0;
-        newY = centerY - newHeight / 2.0;
-        if (newX <= 0) {
-          newX = 0;
-        }
-        if (newY <= 0) {
-          newY = 0;
-        }
-        let newViewBox = [
-          newX,
-          newY,
-          newWidth,
-          newHeight
-        ];
-        play.setAttribute("viewBox", newViewBox.join(' '));
-      }
-      
       document.getElementById("mainground").onwheel = (e) => {
         e.preventDefault();
         console.log("did wheel", e);
-        zoom(e);
+        interaction.zoom(e);
       };
 
       main.resizeCanvas();
