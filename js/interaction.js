@@ -613,7 +613,7 @@ let interaction = {};
               nextIndex = setup.mapRelatives[j].indexOf(child.id);
               if (setup.mapRelatives[j].indexOf(node.children[i - 1].id) === nextIndex - 1) {
                 if (prevAccumulator.val > 1) {
-                  vineWidth++;
+                  vineWidth = prevAccumulator.val - 1;
                 }
                 revisedWidth = 1;
               }
@@ -641,8 +641,12 @@ let interaction = {};
         };
         animateChildren(newNode.id, child, nChildren); // recursive method
         let vinesDone = attemptVines(newNode.id, child); // now that that is done for all descendants, let's try creating vines
-        prevAccumulator = nChildren; // replace previous accumulator with the currently-updated one (from this node's descendants) to pass on to the sibling
-        prevAccumulator.val += vineWidth;
+        // replace previous accumulator with the currently-updated one (from this node's descendants) to pass on to the sibling
+        if (nChildren.val > vineWidth) {
+          prevAccumulator.val = nChildren.val
+        } else {
+          prevAccumulator.val = vineWidth;
+        }
         accumulator.val += nChildren.val - 1; // add the extra columns before returning to ancestor
       //}
       
