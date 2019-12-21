@@ -143,7 +143,7 @@ let setup = {
           
           let relativeNotFound = true;
           for (const relations of setup.mapRelatives) {
-            notFound = relations.toString() !== relatives.toString();
+            relativeNotFound = relations.toString() !== relatives.toString();
           }
           if (relativeNotFound) {
             setup.mapRelatives.push(relatives);

@@ -127,6 +127,14 @@ let interaction = {};
     }
   }
   
+  function displayMenu() {
+    
+  }
+  
+  function hideMenu() {
+    
+  }
+  
   function hoverBasic(e) {
     for (child of e.target.childNodes) {
       if (child.classList.contains("node-hover-overlay")) {
@@ -240,7 +248,7 @@ let interaction = {};
     } else {
       copy.setAttribute("transform", "translate(" + cursor.get().x + " " + cursor.get().y + ")");
     }
-    if (main.allowColors) {
+    if (main.allowColors && main.advancedColors) {
       copy.children[0].setAttribute("fill", "#" + areaData[setup.mapRoots[main.currentMap - 1].mapId].color);
     } else {
       copy.children[0].setAttribute("fill", "#ffffff");
@@ -313,7 +321,7 @@ let interaction = {};
       shapeObject.setAttribute("transform", "translate(" + cursor.get().x + " " + cursor.get().y + ")");
     }
     // color fill, factoring in colorblind mode
-    if (main.allowColors) {
+    if (main.allowColors && main.advancedColors) {
       shapeObject.setAttribute("fill", "#" + areaData[setup.mapRoots[main.currentMap - 1].mapId].color); // color fill
     } else {
       shapeObject.setAttribute("fill", "#ffffff");
@@ -1033,7 +1041,7 @@ let interaction = {};
         clickCapture = clickRoot; // assign click method
         if (setup.root.id !== currentNode.id) { // if this isn't the root of all maps
           titleText = areaData[main.workingData.find(n => n.id === currentNode.pointsToElevatorId).mapId].name.toUpperCase(); // display destination name
-          fillColor = "#" + areaData[main.workingData.find(n => n.id === currentNode.pointsToElevatorId).mapId].color; // get color of target elevator
+          fillColor = main.advancedColors ? "#" + areaData[main.workingData.find(n => n.id === currentNode.pointsToElevatorId).mapId].color : "#ffffff"; // get color of target elevator
         } else {
           titleText = "START"; // standard title text
         }
@@ -1066,7 +1074,7 @@ let interaction = {};
         if (currentNode.pointsToElevatorId !== -1) {
           //console.log(currentNode);
           titleText = areaData[main.workingData.find(n => n.id === currentNode.pointsToElevatorId).mapId].name.toUpperCase(); // display destination name
-          fillColor = "#" + areaData[main.workingData.find(n => n.id === currentNode.pointsToElevatorId).mapId].color; // get color of target elevator
+          fillColor = main.advancedColors ? "#" + areaData[main.workingData.find(n => n.id === currentNode.pointsToElevatorId).mapId].color : "#ffffff"; // get color of target elevator
         }// otherwise, fall back onto the data-given label
         break;
       case "boss": // boss battle
@@ -1167,8 +1175,8 @@ let interaction = {};
           shapeObject = arrow_right_template.cloneNode(true);
           hoverShape = arrow_right_template.cloneNode(true);
         }
-        fillColor = "#"+ areaData[currentNode.mapId].color; // get color of this map
-        hoverCapture = hoverBasic; // assign hover method
+        fillColor = main.advancedColors ? "#"+ areaData[currentNode.mapId].color : "#ffffff"; // get color of this map
+        hoverCapture = doNothing; // assign hover method
         clickCapture = doNothing; // assign click method
         break;
       case "none":
@@ -1314,8 +1322,10 @@ let interaction = {};
       groupObject.setAttribute("transform", "translate(" + cursor.get().x + " " + cursor.get().y + ")");
     }
     
-    groupObject.addEventListener("mouseenter", hoverCapture); // apply hovering method
-    groupObject.addEventListener("mouseleave", removeHover); // and remove hovering effect
+    if (main.getIsDesktop()) {
+      groupObject.addEventListener("mouseenter", hoverCapture); // apply hovering method
+      groupObject.addEventListener("mouseleave", removeHover); // and remove hovering effect
+    }
     groupObject.addEventListener("click", clickCapture); // apply clicking method
     
     // for each elevator that isn't a map root, we'll also include an arrow pointing south
@@ -1324,7 +1334,7 @@ let interaction = {};
       escapeArrow.removeAttribute("id"); // remove Id to prevent DOM troubles
       // use the map's color for the arrow unless using colorblind mode
       let arrowFill = "ffffff"; // default for colorblind mode
-      if (main.allowColors) {
+      if (main.allowColors && main.advancedColors) {
         arrowFill = areaData[currentNode.mapId].color; // grab the map color
         let destination = main.workingData.find(n => n.id === currentNode.pointsToElevatorId); // find the destination node to grab the map data
         if (destination !== undefined) { // if we can find it, use that map's color
@@ -1342,7 +1352,7 @@ let interaction = {};
       }
       escapeArrow.setAttribute("transform", "translate(0 144)"); // place some distance south of the elevator
       // color last line according to new map color unless using colorblind mode
-      if (main.allowColors) {
+      if (main.allowColors && main.advancedColors) {
         // using a gradient
         let newGradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
         newGradient.setAttribute("id", "Gradient" + (numGradsAlready + 1));

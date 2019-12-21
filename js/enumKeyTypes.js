@@ -1,0 +1,4 @@
+const enumKeyTypes = [
+  "na",
+  "Beam"
+];

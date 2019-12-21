@@ -21,8 +21,8 @@
       <rect id="lock_template" class="lock-field" x="-60" y="-60" rx="12.5" ry="12.5" width="120" height="120" stroke="black" stroke-width="4"></rect>
       <circle id="goal_template" class="goal-field" x="0" y="0" cx="0" cy="0" r="60" stroke="black" stroke-width="4"></circle>
       <path id="key_template" class="key-field" d="M -7.5 -52.5 c 7.5 -7.5, 7.5 -7.5, 15 0 l 45 45 c 7.5 7.5, 7.5 7.5, 0 15 l -45 45 c -7.5 7.5, -7.5 7.5, -15 0 l -45 -45 c -7.5 -7.5, -7.5 -7.5, 0 -15 Z" stroke="black" stroke-width="4"></path>
-      <path id="unreq_template" class="unreq-field" d="M -3.75 -53.5 c 3.75 -6.5, 3.75 -6.5, 7.5 0 l 52.5 91 c 3.75 6.5, 3.75 6.5, -3.75 6.5 l -105 0 c -7.5 0, -7.5 0, -3.75 -6.5 Z" stroke="black" stroke-width="4"></path>
-      <path id="slot_template" class="slot-field" d="M 0 -60 l 60 37 l -25 71 l -70 0 l -25 -71 Z" stroke="black" stroke-width="4"></path>
+      <path id="unreq_template" class="unreq-field" d="M -3.75 -60 c 3.75 -6.5, 3.75 -6.5, 7.5 0 l 52.5 91 c 3.75 6.5, 3.75 6.5, -3.75 6.5 l -105 0 c -7.5 0, -7.5 0, -3.75 -6.5 Z" stroke="black" stroke-width="4"></path>
+      <path id="slot_template" class="slot-field" d="M 0 -60 l 60 40 l -25 68 l -70 0 l -25 -68 Z" stroke="black" stroke-width="4"></path>
       <path id="access_template" class="access-field" d="M 0 -60 l 52 30 l 0 60 l -52 30 l -52 -30 l 0 -60 Z" stroke="black" stroke-width="4"></path>
       <path id="end_template" class="access-field" d="M 0 -60 l 30 0 l 30 30 l 0 60 l -30 30 l -60 0 l -30 -30 l 0 -60 l 30 -30 Z" stroke="black" stroke-width="4"></path>
       <path id="arrow_up_template" class="arrow-up-field" d="M -5 15 l 0 -15 l -10 0 l 15 -30 l 15 30 l -10 0 l 0 15" stroke="black" stroke-width="3" fill="white"></path>
@@ -90,9 +90,17 @@
       
       document.getElementById("mainground").onwheel = (e) => {
         e.preventDefault();
-        console.log("did wheel", e);
+        //console.log("did wheel", e);
         interaction.zoom(e);
       };
+      
+      if (/Android|webOS|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent)) {
+        console.log("Using mobile");
+        main.setIsMobile();
+      } else {
+        console.log("Using desktop");
+        main.setIsDesktop();
+      }
 
       main.resizeCanvas();
     });

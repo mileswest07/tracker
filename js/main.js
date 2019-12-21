@@ -4,6 +4,7 @@ let main = {
 
 (function() {
   let numMapsReady = 5; // TODO: phase this out
+  let isMobile = false;
   
   const games = {
     "d": "mrd",
@@ -25,7 +26,8 @@ let main = {
   function init() {
     main.currentGame = games.m; // TODO: swap games when HUD is made
     main.goRandom = false; // TODO: select whether vanilla or randomized
-    main.allowColors = true; // TODO; colorblind option
+    main.allowColors = true; // TODO: colorblind option
+    main.advancedColors = false; // TODO: select whether tons of colors, or some white/black is allowed
     main.workingData = rawData; // TODO: make it game-dependent
     setup.makeTree(); // construct data tree
     // at this point, the data tree should be complete, with vine data on the side. No visuals have been processed yet.
@@ -70,7 +72,27 @@ let main = {
     console.log("maps for", numMapsReady, "/", setup.mapRoots.length, "areas ready");
   }
   
+  function setIsMobile() {
+    isMobile = true;
+  }
+  
+  function setIsDesktop() {
+    isMobile = false;
+  }
+  
+  function getIsMobile() {
+    return isMobile === true;
+  }
+  
+  function getIsDesktop() {
+    return isMobile === false;
+  }
+  
   main.debugTree = debugTree;
   main.init = init;
   main.resizeCanvas = resizeCanvas;
+  main.setIsMobile = setIsMobile;
+  main.setIsDesktop = setIsDesktop;
+  main.getIsMobile = getIsMobile;
+  main.getIsDesktop = getIsDesktop;
 })();
