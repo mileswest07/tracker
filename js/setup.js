@@ -28,7 +28,7 @@ let setup = {
     let relativesNotSelected = true;
     for (let i = 0; i < setup.mapRelatives.length; i++) {
       if (setup.mapRelatives[i].includes(a.id) && setup.mapRelatives[i].includes(b.id)) {
-        console.log('relatives found for', setup.mapRelatives[i]);
+        //console.log('relatives found for', setup.mapRelatives[i]);
         interimArray[a.type].push(b);
         relativesNotSelected = false;
       } else if (setup.mapRelatives[i].includes(a.id)) {
@@ -57,7 +57,6 @@ let setup = {
     for (let i = 0; i < properOrder.length; i++) {
       compiledArray = [...compiledArray, ...interimArray[properOrder[i]]];
     }
-    
     
     if (compiledArray[0].id === a.id) {
       returnValue = -1;
@@ -99,8 +98,6 @@ let setup = {
         }
         if (notFound) { // if after all that, the would-be vine is not a duplicate, then add it to the array of vines, for good
           setup.mapVines.push(newArray);
-          
-          
           
           // and now to find out which relatives need to remember when NOT to scoot to the right when calculating space for children (in case of shared children)
           // To do this, we need to find common ancestors
@@ -148,9 +145,6 @@ let setup = {
           if (relativeNotFound) {
             setup.mapRelatives.push(relatives);
           }
-          
-          
-          
         }
       }
       
@@ -165,9 +159,6 @@ let setup = {
     }
     
     currentNode.children = currentNode.children.sort(sortingNodes);
-    
-    // moving relatives close together
-    
   }
 
   function makeTree() {

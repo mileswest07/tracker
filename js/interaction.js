@@ -596,21 +596,42 @@ let interaction = {};
     if (node.children.length === 0) {
       return; // and because there's no children, we don't need to factor in anything else with paths
     }
-    if (node.parentId === -1) { // the map root needs to branch right first before displaying its children
+    if ((node.parentId === -1 && main.separateAreas) || node.id === setup.root.id) { // the map root needs to branch right first before displaying its children
       makeLineInDirectionByUnits("r", 1);
     } else { // everything else branches down
       makeLineInDirectionByUnits("d", 1);
     }
     
+    let pseudolength = node.children.length;
+    let pseudochildren = node.children;
+    
+    accumulator.val = pseudolength; // if a node has multiple children, the parents need to know
+    
     let prevAccumulator = { // to pass by reference, this needs to be an object!
       val : accumulator.val // so get ready to pass this value up to its ancestors
     };
-    accumulator.val = node.children.length; // if a node has multiple children, the parents need to know
     
-    for (let i = 0; i < node.children.length; i++) { // for each child, going down each generation for the firstborn before moving to the secondborn
-      let child = node.children[i];
+    for (let i = 0; i < pseudolength; i++) { // for each child, going down each generation for the firstborn before moving to the secondborn
+      let child = pseudochildren[i];
       let vineWidth = 0;
-      if (node.children.length > 1) { // when a parent has multiple children, we need to prepare horizontal lines and junction dots to make space for the children nodes
+      
+      if (!main.separateAreas && nodeType[child.type] === "elevator") {
+        let newChild = setup.mapRoots.find((item) => {
+          return item.id === child.pointsToElevatorId;
+        });
+        
+        for (let j = 0; j < newChild.children.length; j++) {
+          pseudochildren.splice(i + j + 1, 0, newChild.children[j]);
+          pseudolength++;
+          accumulator.val++;
+        }
+        pseudochildren.splice(i, 1);
+        pseudolength--;
+        accumulator.val--;
+        child = pseudochildren[i];
+      }
+      
+      if (pseudolength > 1) { // when a parent has multiple children, we need to prepare horizontal lines and junction dots to make space for the children nodes
         if (i > 0) { // before making any of its siblings, we're going to need to move some columns over, and make the appropriate line
           // get width of previous' children
           
@@ -619,9 +640,10 @@ let interaction = {};
             let nextIndex = 0;
             if (setup.mapRelatives[j].indexOf(child.id) !== -1) {
               nextIndex = setup.mapRelatives[j].indexOf(child.id);
-              if (setup.mapRelatives[j].indexOf(node.children[i - 1].id) === nextIndex - 1) {
+              if (setup.mapRelatives[j].indexOf(pseudochildren[i - 1].id) === nextIndex - 1) {
                 if (prevAccumulator.val > 1) {
                   vineWidth = prevAccumulator.val - 1;
+                  accumulator.val--;
                 }
                 revisedWidth = 1;
               }
@@ -635,7 +657,7 @@ let interaction = {};
         insertJunctionDot(); // now that we're in the destination column, place the junction dot
         makeLineInDirectionByUnits("d", 1);
         // TODO: do the proper method for dropping keys and locks, based on Mark's graphics
-      } else if (node.parentId === -1) { // should a map begin with only one child, let's still include a junction dot
+      } else if (node.parentId === -1 && main.separateAreas) { // should a map begin with only one child, let's still include a junction dot
         insertJunctionDot();
         makeLineInDirectionByUnits("d", 1);
       } // otherwise, don't include a junction dot
@@ -651,7 +673,7 @@ let interaction = {};
         let vinesDone = attemptVines(newNode.id, child); // now that that is done for all descendants, let's try creating vines
         // replace previous accumulator with the currently-updated one (from this node's descendants) to pass on to the sibling
         if (nChildren.val > vineWidth) {
-          prevAccumulator.val = nChildren.val
+          prevAccumulator.val = nChildren.val;
         } else {
           prevAccumulator.val = vineWidth;
         }
@@ -659,7 +681,7 @@ let interaction = {};
       //}
       
       cursor.shift(0, -1); // and now that that's all finally done, step up one row
-      if (node.children.length === 1) { // or two, if this is the only child
+      if (pseudolength === 1) { // or two, if this is the only child
         cursor.shift(0, -1);
       }
       // before moving to the sibling of this node
@@ -677,9 +699,6 @@ let interaction = {};
     if (node.children.length === 0) {
       accumulator.val = 1; // no children = width of itself, which is 1
     }
-    
-    
-    
     // first check to see if vines are to be made
     // is this node part of a vine?
     let toDoVines = false;
@@ -737,14 +756,7 @@ let interaction = {};
       if (node.children.length > 1) { // when a parent has multiple children, we need to prepare horizontal lines and junction dots to make space for the children nodes
         if (i > 0) { // before making any of its siblings, we're going to need to move some columns over, and make the appropriate line
           // get width of previous' children
-          
-          
-          // TODO: fix column width based on descendants BUT ALSO based on 'relatives' and vines
-          
-          
           makeLineInDirectionByUnits("r", prevAccumulator.val); // each descendant needs to report in to the ancestor, so they know how many spaces to move to the right
-          
-          
         }
         insertJunctionDot(); // now that we're in the destination column, place the junction dot
         makeLineInDirectionByUnits("d", 1);
@@ -758,9 +770,6 @@ let interaction = {};
       
       cursor.shift(0, -1); // and now that that's all finally done, step up one row
     }
-    
-    
-    
   }
   
   // display map based on input parameter

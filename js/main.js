@@ -29,6 +29,7 @@ let main = {
     main.allowColors = true; // TODO: colorblind option
     main.advancedColors = false; // TODO: select whether tons of colors, or some white/black is allowed
     main.workingData = rawData; // TODO: make it game-dependent
+    main.separateAreas = true; // TODO: make it an option
     setup.makeTree(); // construct data tree
     // at this point, the data tree should be complete, with vine data on the side. No visuals have been processed yet.
     cursor.move(0, 0); // a behind-the-scenes pointer set to the origin point of the chart (where the START node is)
