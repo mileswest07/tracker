@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Average Tracker</title>
+<title>Item Dependency Explorer: &lt;[Metroid]&gt;</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- <meta name="Keywords" content=""> -->
@@ -12,7 +12,18 @@
 
 <body onresize="main.resizeCanvas()">
   <section id="hud">
-    
+    <div class="hud-v hud-top">
+      
+    </div>
+    <div class="hud-h hud-left">
+      
+    </div>
+    <div class="hud-h hud-right">
+      
+    </div>
+    <div class="hud-v hud-bottom">
+      
+    </div>
   </section>
   <svg id="playground" width="100%" height="100%" viewBox="0 0 432 432" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
     Your browser won't support this app. Please try another browser.
@@ -87,22 +98,6 @@
   <script type="text/javascript">
     document.addEventListener("DOMContentLoaded", () => {
       main.init(); // setup
-      
-      document.getElementById("mainground").onwheel = (e) => {
-        e.preventDefault();
-        //console.log("did wheel", e);
-        interaction.zoom(e);
-      };
-      
-      if (/Android|webOS|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent)) {
-        console.log("Using mobile");
-        main.setIsMobile();
-      } else {
-        console.log("Using desktop");
-        main.setIsDesktop();
-      }
-
-      main.resizeCanvas();
     });
   </script>
 </body>

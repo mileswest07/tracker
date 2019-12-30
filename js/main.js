@@ -34,6 +34,22 @@ let main = {
     // at this point, the data tree should be complete, with vine data on the side. No visuals have been processed yet.
     cursor.move(0, 0); // a behind-the-scenes pointer set to the origin point of the chart (where the START node is)
     interaction.popMap(main.currentMap); // display map 1
+    
+    document.getElementById("mainground").onwheel = (e) => {
+      e.preventDefault();
+      //console.log("did wheel", e);
+      interaction.zoom(e);
+    };
+    
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent)) {
+      console.log("Using mobile");
+      main.setIsMobile();
+    } else {
+      console.log("Using desktop");
+      main.setIsDesktop();
+    }
+
+    main.resizeCanvas();
   }
   
   // resize background grid to fit the browser window

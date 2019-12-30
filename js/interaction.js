@@ -785,7 +785,9 @@ let interaction = {};
       mapSearch.setAttribute("id", "mapSVG-" + mapId);
       mapSearch.setAttribute("class", "map-svg");
       mapSearch.setAttribute("width", "100%");
+      // mapSearch.setAttribute("width", "60%"); //TODO: once we begin with the HUD upgrade
       mapSearch.setAttribute("height", "100%");
+      // mapSearch.setAttribute("height", "60%"); //TODO: once we begin with the HUD upgrade
       mapSearch.setAttribute("viewBox", "0 0 432 432"); // 3 x 3 map for a default size
       mapSearch.setAttribute("xmlns", "http://www.w3.org/2000/svg");
       mapSearch.setAttributeNS("http://www.w3.org/2000/svg", "xlink", "http://www.w3.org/1999/xlink");
@@ -1151,6 +1153,7 @@ let interaction = {};
         if (currentNode.type === 4) { // save room
           hoverCapture = hoverBasic; // assign hover method
           clickCapture = save; // assign click method
+          titleText = "S";
         } else if (currentNode.type === 7) { // unrequired key
           hoverCapture = hoverBasic; // assign hover method
           clickCapture = collectKey; // assign click method
@@ -1203,6 +1206,7 @@ let interaction = {};
     
     // now let's create the text to go inside of the shape
     let textObject = null; // container object
+    let textOffset = 0;
     // if we already have the text populated
     // or the text has yet to be populated
     // or we have to mark that a certain number of keys are needed
@@ -1210,26 +1214,32 @@ let interaction = {};
     if (titleText.length !== 0 || (currentNode.textFill.length > 0 || (currentNode.numReqd > 1)) && currentNode.type !== 6) {
       textObject = document.createElementNS("http://www.w3.org/2000/svg", "text");
       textObject.classList.add("text-node");
-      // TODO: variable text length, both based on rawData input options, and dynamic textarea filling from the SVG library
+      
       textObject.setAttribute("x", "0");
       textObject.setAttribute("y", "9"); // slight vertical offset
       textObject.setAttribute("fill", "black");
       textObject.setAttribute("text-anchor", "middle"); // centered
+      textOffset = 39; // 39 pixels is perfect for "lg" text offset, if an image needs to be added
       
       if (titleText.length !== 0) { // if we already have text set, based on earlier code
+        textObject.classList.add("text-lg");
         textObject.innerHTML = titleText;
       } else if (currentNode.numReqd > 1 && (currentNode.type === 5 || currentNode.type === 12)) { // display required value
-        textObject.classList.add("required-text"); // apply the right style
+        textObject.classList.add("text-md"); // apply the right style
         textObject.innerHTML = "Req: " + currentNode.numReqd;
+        textOffset -= 4;
       } else if (currentNode.numReqd > 1) { // display required value
-        textObject.classList.add("required-text"); // apply the right style
+        textObject.classList.add("text-md"); // apply the right style
         textObject.setAttribute("y", "0"); // no vertical offset
         textObject.innerHTML = "x" + currentNode.numReqd;
+        textOffset -= 4;
       } else if (currentNode.type === 4) { // for save rooms, just display the giant S
-        textObject.classList.add("save-text"); // apply the right style
+        textObject.classList.add("text-xl"); // apply the right style
         textObject.setAttribute("y", "0"); // no vertical offset
         textObject.innerHTML = "S";
+        textOffset = 0;
       } else {
+        textObject.classList.add("text-lg");
         textObject.innerHTML = currentNode.textFill;
       }
     }
@@ -1268,13 +1278,12 @@ let interaction = {};
       } else { // this should apply for all other shape types
         textObject.setAttribute("fill", "black");
       }
-      //imageObject.setAttribute("y", "-28"); // offset image to be higher
-      textObject.setAttribute("y", "39"); // offset text to be lower
+      textObject.setAttribute("y", textOffset); // offset text to be lower
       groupObject.appendChild(imageObject); // then add to the group
       groupObject.appendChild(textObject); // in the right order
-    } else if (imageObject) { // no text, just apply image with current offset
+    } else if (imageObject) { // no text, just apply image with default offset
       groupObject.appendChild(imageObject);
-    } else if (textObject) { // no image, just apply text with current offset
+    } else if (textObject) { // no image, just apply text with default offset
       groupObject.appendChild(textObject);
     } else {
       //something has gone wrong, we need to capture this
@@ -1290,6 +1299,7 @@ let interaction = {};
     if (currentNode.textOuter.length !== 0 || currentNode.type === 7 || currentNode.type === 8 || currentNode.type === 11) {
       outerTextObject = document.createElementNS("http://www.w3.org/2000/svg", "text");
       outerTextObject.classList.add("text-node");
+      outerTextObject.classList.add("text-lg");
       outerTextObject.setAttribute("x", "0");
       outerTextObject.setAttribute("y", "60");// offset so that the text begins outside of the shape's borders
       outerTextObject.setAttribute("fill", main.allowColors ? "white" : "black");
@@ -1408,6 +1418,7 @@ let interaction = {};
     return document.getElementById(groupObject.id);
   }
   
+  // zoom in and out, dynamic based on whether on desktop or on mobile, using mouse or using HUD elements
   function zoom(e) {
     let play = document.getElementById("mapSVG-" + main.currentMap);
     let viewBoxAttr = play.getAttribute("viewBox");
@@ -1420,8 +1431,8 @@ let interaction = {};
     let centerY = e.clientY;
     
     if (e.target !== play) {
-      centerX = parseInt(e.target.parentElement.attributes.transform.value.match(/\d+/g)[0]);
-      centerY = parseInt(e.target.parentElement.attributes.transform.value.match(/\d+/g)[1]);
+      centerX = parseInt(e.target.parentElement.attributes.transform.value.match(digitPattern)[0]);
+      centerY = parseInt(e.target.parentElement.attributes.transform.value.match(digitPattern)[1]);
     }
     
     if (e.deltaY > 0) {
