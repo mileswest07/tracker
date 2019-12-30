@@ -665,7 +665,7 @@ let interaction = {};
       
       // and now that this node has been created, we need to deal with its descendants
       // recursion
-      //if (child.type !== 5 || child.isUnlocked) { // only once this lock type has been unlocked
+      //if ((child.type !== 5 && child.type !== 12) || child.isUnlocked) { // only once this lock type has been unlocked
         let nChildren = { // now create accumulator for descendants
           val: 1 // needs to pass by reference, not value, otherwise there is no point
         };
@@ -678,7 +678,9 @@ let interaction = {};
           prevAccumulator.val = vineWidth;
         }
         accumulator.val += nChildren.val - 1; // add the extra columns before returning to ancestor
-      //}
+      /* } else {
+        prevAccumulator.val = 1;
+      } */
       
       cursor.shift(0, -1); // and now that that's all finally done, step up one row
       if (pseudolength === 1) { // or two, if this is the only child
@@ -931,9 +933,8 @@ let interaction = {};
     collecs.push(getCurrentMapElement("junctions"));
     collecs.push(getCurrentMapElement("mainMeat"));
     
-    for (collection of collecs) {
-      for (child of collection.children) {
-        let child = collecs[i].children[j];
+    for (let i = 0; i < collecs.length; i++) {
+      for (child of collecs[i].children) {
         let childCoords = getCurrentCoordsOfNode(child);
         if (coords[0] < childCoords[0]) {
           toShiftArray.push(child);
@@ -1007,6 +1008,7 @@ let interaction = {};
       accumulator = { val: 1 };
       animateChildren(parent.id, retrievedNode, accumulator);
       attemptVines(parent.id, retrievedNode);
+      // TODO: vines are having two issues; need to solve them
     }
   }
   
@@ -1188,8 +1190,8 @@ let interaction = {};
           hoverShape = arrow_right_template.cloneNode(true);
         }
         fillColor = main.advancedColors ? "#"+ areaData[currentNode.mapId].color : "#ffffff"; // get color of this map
-        hoverCapture = doNothing; // assign hover method
-        clickCapture = doNothing; // assign click method
+        hoverCapture = hoverBasic; // assign hover method
+        clickCapture = unlock; // assign click method
         break;
       case "none":
       default:
