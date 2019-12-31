@@ -390,37 +390,40 @@ let interaction = {
   function createCousinVine(elementId, destinationRaw) {
     let destinationId = "mapSVG-" + main.currentMap;
     
-    switch (destinationRaw.type) {
-      case 3: 
-      case 2: 
-      case 1: 
-      case 14: 
+    switch (nodeType[destinationRaw.type]) {
+      case "start":
+      case "elevator":
+      case "boss":
+      case "another":
         destinationId += "_goal" + destinationRaw.id;
         break;
-      case 13: 
+      case "end":
         destinationId += "_end" + destinationRaw.id;
         break;
-      case 5: 
+      case "lock":
         destinationId += "_lock" + destinationRaw.id;
         break;
-      case 8: 
+      case "key":
         destinationId += "_key" + destinationRaw.id;
         break;
-      case 9: 
+      case "unknown":
+        destinationId += "_unclaimed-lock" + destinationRaw.id;
+        break;
+      case "empty":
         destinationId += "_unclaimed-key" + destinationRaw.id;
         break;
-      case 11: 
+      case "slot":
         destinationId += "_slot" + destinationRaw.id;
         break;
-      case 12: 
+      case "access":
         destinationId += "_access" + destinationRaw.id;
         break;
-      case 4: 
-      case 7: 
-      case 10: 
+      case "save": 
+      case "unreq": 
+      case "other": 
         destinationId += "_unreq" + destinationRaw.id;
         break;
-      case 6: 
+      case "oneway": 
         destinationId += "_oneway" + destinationRaw.id;
         break;
     }
@@ -1155,6 +1158,14 @@ let interaction = {
         fillColor = "#"+ objColors[pickupType[currentNode.pickupType]]; // grab the background color
         hoverCapture = hoverBasic; // assign hover method
         clickCapture = assignKey; // assign click method
+        break;
+      case "unknown": // lock (blank)
+        groupObject.id += "unclaimed-lock" + currentNode.id; // add specific data about node to ID
+        shapeObject = lock_template.cloneNode(true); // square
+        hoverShape = lock_template.cloneNode(true); // square
+        imageClass = "blank-lock"; // needs to be visible, so don't apply anything
+        hoverCapture = hoverBasic; // assign hover method
+        clickCapture = assignLock; // assign click method
         break;
       case "empty": // required key (blank)
         groupObject.id += "unclaimed-key" + currentNode.id; // add specific data about node to ID

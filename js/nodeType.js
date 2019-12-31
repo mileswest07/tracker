@@ -13,5 +13,6 @@ const nodeType = [
   "slot",
   "access",
   "end",
-  "another"
+  "another",
+  "unknown"
 ];
