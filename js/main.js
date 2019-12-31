@@ -35,19 +35,38 @@ let main = {
     cursor.move(0, 0); // a behind-the-scenes pointer set to the origin point of the chart (where the START node is)
     interaction.popMap(main.currentMap); // display map 1
     
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent)) {
+      console.log("Using mobile");
+      isMobile = true;
+    } else {
+      console.log("Using desktop");
+      isMobile = false;
+    }
+    
     document.getElementById("mainground").onwheel = (e) => {
       e.preventDefault();
       //console.log("did wheel", e);
       interaction.zoom(e);
     };
     
-    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent)) {
-      console.log("Using mobile");
-      main.setIsMobile();
-    } else {
-      console.log("Using desktop");
-      main.setIsDesktop();
-    }
+    document.getElementById("mainground").onmousedown = (e) => {
+      e.preventDefault();
+      //console.log("did click start", e);
+      interaction.panStart(e);
+    };
+    
+    document.getElementById("mainground").onmousemove = (e) => {
+      e.preventDefault();
+      if (interaction.readyPan) {
+        interaction.panDuring(e);
+      }
+    };
+    
+    document.getElementById("mainground").onmouseup = (e) => {
+      e.preventDefault();
+      //console.log("did click end", e);
+      interaction.panEnd(e);
+    };
 
     main.resizeCanvas();
   }
@@ -89,14 +108,6 @@ let main = {
     console.log("maps for", numMapsReady, "/", setup.mapRoots.length, "areas ready");
   }
   
-  function setIsMobile() {
-    isMobile = true;
-  }
-  
-  function setIsDesktop() {
-    isMobile = false;
-  }
-  
   function getIsMobile() {
     return isMobile === true;
   }
@@ -108,8 +119,6 @@ let main = {
   main.debugTree = debugTree;
   main.init = init;
   main.resizeCanvas = resizeCanvas;
-  main.setIsMobile = setIsMobile;
-  main.setIsDesktop = setIsDesktop;
   main.getIsMobile = getIsMobile;
   main.getIsDesktop = getIsDesktop;
 })();

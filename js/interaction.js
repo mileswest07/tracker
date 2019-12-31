@@ -1,4 +1,18 @@
-let interaction = {};
+let interaction = {
+  readyPan: false,
+  prev: {
+    x: 0,
+    y: 0
+  },
+  max: {
+    x: 432,
+    y: 432
+  },
+  min: {
+    x: 0,
+    y: 0
+  }
+};
 
 (function() {
   let digitPattern = /\d+/g;
@@ -153,18 +167,23 @@ let interaction = {};
     let mapSearch = document.getElementById("mapSVG-" + main.currentMap); // for whatever the currently-displayed map
     let str = mapSearch.attributes.viewBox.value;
     let result = str.match(digitPattern);
-    let newStr = "" + result[0] + " " + result[1] + " ";
+    let newStr = [];
+    newStr.push(result[0]);
+    newStr.push(result[1]);
     if (parseInt(result[2]) < (cursor.get().x + 144)) { // if currently at the edge of the map
-      newStr += (cursor.get().x + 144 + 72); // if needed, expand with a margin
+      newStr.push(cursor.get().x + 144 + 72); // if needed, expand with a margin
+      interaction.max.x = newStr[2];
     } else {
-      newStr += result[2];
+      newStr.push(result[2]);
     }
     if (parseInt(result[3]) < (cursor.get().y + 144)) { // if currently at the edge of the map
-      newStr += " " + (cursor.get().y + 144 + 72); // if needed, expand with a margin
+      newStr.push(cursor.get().y + 144 + 72); // if needed, expand with a margin
+      interaction.max.y = newStr[3];
     } else {
-      newStr += " " + result[3];
+      newStr.push(result[3]);
     }
-    mapSearch.attributes.viewBox.value = newStr; // now apply the reformed string
+    
+    mapSearch.setAttribute("viewBox", newStr.join(' '));
   }
   
   function getCurrentMapElement(childCategory) {
@@ -228,15 +247,27 @@ let interaction = {};
     let templateName = "";
     switch(dir) {
       case "l":
+      case "left":
+      case "w":
+      case "west":
         templateName = "grid_line_h_left_template";
         break;
       case "r":
+      case "right":
+      case "e":
+      case "east":
         templateName = "grid_line_h_right_template";
         break;
       case "u":
+      case "up":
+      case "n":
+      case "north":
         templateName = "grid_line_v_up_template";
         break;
       case "d":
+      case "down":
+      case "s":
+      case "south":
         templateName = "grid_line_v_down_template";
         break;
     }
@@ -267,32 +298,40 @@ let interaction = {};
   }
   
   function makeLineInDirection(direction) {
-    let firstDirection;
+    let firstDirection = direction;
     let secondDirection;
     let xUnit = 0;
     let yUnit = 0;
     
     switch (direction) {
       case "d":
-        firstDirection = "d";
+      case "down":
+      case "s":
+      case "south":
         secondDirection = "u";
         xUnit = 0;
         yUnit = 1;
         break;
       case "u":
-        firstDirection = "u";
+      case "up":
+      case "n":
+      case "north":
         secondDirection = "d";
         xUnit = 0;
         yUnit = -1;
         break;
       case "r":
-        firstDirection = "r";
+      case "right":
+      case "e":
+      case "east":
         secondDirection = "l";
         xUnit = 1;
         yUnit = 0;
         break;
       case "l":
-        firstDirection = "l";
+      case "left":
+      case "w":
+      case "west":
         secondDirection = "r";
         xUnit = -1;
         yUnit = 0;
@@ -442,30 +481,12 @@ let interaction = {};
     // and now make the graphics
     
     centerCursorOnElement(elementId);
-    for (let j = 0; j < sourceDrop; j++) {
-      insertPathLine("d");
-      cursor.shift(0, 1);
-      insertPathLine("u");
-    }
+    makeLineInDirectionByUnits("d", sourceDrop);
     insertJunctionDot();
     centerCursorOnElement(destinationId);
-    for (let j = 0; j < destDrop; j++) {
-      insertPathLine("d");
-      cursor.shift(0, 1);
-      insertPathLine("u");
-    }
+    makeLineInDirectionByUnits("d", destDrop);
     insertJunctionDot();
-    for (let j = 0; j < diffRun; j++) {
-      if (flipped) {
-        insertPathLine("r");
-        cursor.shift(1, 0);
-        insertPathLine("l");
-      } else {
-        insertPathLine("l");
-        cursor.shift(-1, 0);
-        insertPathLine("r");
-      }
-    }
+    makeLineInDirectionByUnits(flipped ? "r" : "l", diffRun);
     
     // reset cursor to original position
     centerCursorOnElement(elementId);
@@ -656,7 +677,7 @@ let interaction = {};
         }
         insertJunctionDot(); // now that we're in the destination column, place the junction dot
         makeLineInDirectionByUnits("d", 1);
-        // TODO: do the proper method for dropping keys and locks, based on Mark's graphics
+        // TODO: do the proper method for dropping keys and locks, based on Mark's graphics, but only in dependency or condensed modes
       } else if (node.parentId === -1 && main.separateAreas) { // should a map begin with only one child, let's still include a junction dot
         insertJunctionDot();
         makeLineInDirectionByUnits("d", 1);
@@ -762,7 +783,7 @@ let interaction = {};
         }
         insertJunctionDot(); // now that we're in the destination column, place the junction dot
         makeLineInDirectionByUnits("d", 1);
-        // TODO: do the proper method for dropping keys and locks, based on Mark's graphics
+        // TODO: do the proper method for dropping keys and locks, based on Mark's graphics, but only in dependency or condensed modes
         
       } else if (node.parentId === -1) { // should a map begin with only one child, let's still include a junction dot
         insertJunctionDot();
@@ -1423,8 +1444,7 @@ let interaction = {};
   // zoom in and out, dynamic based on whether on desktop or on mobile, using mouse or using HUD elements
   function zoom(e) {
     let play = document.getElementById("mapSVG-" + main.currentMap);
-    let viewBoxAttr = play.getAttribute("viewBox");
-    let viewBoxProps = viewBoxAttr.split(' ');
+    let viewBoxProps = play.getAttribute("viewBox").split(' ');
     let oldX = parseFloat(viewBoxProps[0]);
     let oldY = parseFloat(viewBoxProps[1]);
     let oldWidth = parseFloat(viewBoxProps[2]);
@@ -1463,7 +1483,54 @@ let interaction = {};
     play.setAttribute("viewBox", newViewBox.join(' '));
   }
   
+  function panStart(e) {
+    if (e.target.tagName === "svg") {
+      interaction.readyPan = true;
+      interaction.prev.x = e.offsetX;
+      interaction.prev.y = e.offsetY;
+    } else {
+      interaction.readyPan = false;
+    }
+  }
+  
+  function panDuring(e) {
+    if (interaction.readyPan && e.target.tagName === "svg") {
+      let play = document.getElementById("mapSVG-" + main.currentMap);
+      let viewBoxProps = play.getAttribute("viewBox").split(' ');
+      
+      let newX = parseFloat(viewBoxProps[0]) + e.offsetX - interaction.prev.x;
+      if (newX <= interaction.min.x) {
+        newX = interaction.min.x;
+      } else if (newX >= interaction.max.x) {
+        newX = interaction.max.x;
+      }
+      let newY = parseFloat(viewBoxProps[1]) + e.offsetY - interaction.prev.y;
+      if (newY <= interaction.min.y) {
+        newY = interaction.min.y;
+      } else if (newY >= interaction.max.y) {
+        newY = interaction.max.y;
+      }
+      
+      let newViewBox = [
+        newX,
+        newY,
+        parseFloat(viewBoxProps[2]),
+        parseFloat(viewBoxProps[3])
+      ];
+      play.setAttribute("viewBox", newViewBox.join(' '));
+    }
+  }
+  
+  function panEnd(e) {
+    interaction.readyPan = false;
+    interaction.prev.x = 0;
+    interaction.prev.y = 0;
+  }
+  
   interaction.popMap = popMap;
   interaction.zoom = zoom;
+  interaction.panStart = panStart;
+  interaction.panDuring = panDuring;
+  interaction.panEnd = panEnd;
   interaction.navigateTree = navigateTree;
 })();
