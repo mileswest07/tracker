@@ -1,5 +1,5 @@
 let main = {
-  currentMap: 1, // start at map 1 no matter which game is selected
+  currentMap: 1 // start at map 1 no matter which game is selected
 };
 
 (function() {
@@ -44,6 +44,7 @@ let main = {
       main.separateAreas = document.forms["startupMenu"]["separateAreas"].checked;
       
       main.workingData = rawData; // TODO: make it game-dependent
+      main.mode = modes[0]; // TODO: make this an option
       
       let menuPointer = document.getElementById("mainMenu");
       if (menuPointer.classList) { // browser compatibility logic

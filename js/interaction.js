@@ -689,7 +689,7 @@ let interaction = {
       
       // and now that this node has been created, we need to deal with its descendants
       // recursion
-      //if ((child.type !== 5 && child.type !== 12) || child.isUnlocked) { // only once this lock type has been unlocked
+      if (main.mode === modes[0] || (child.type !== 5 && child.type !== 12) || child.isUnlocked) { // only once this lock type has been unlocked
         let nChildren = { // now create accumulator for descendants
           val: 1 // needs to pass by reference, not value, otherwise there is no point
         };
@@ -702,9 +702,9 @@ let interaction = {
           prevAccumulator.val = vineWidth;
         }
         accumulator.val += nChildren.val - 1; // add the extra columns before returning to ancestor
-      /* } else {
+      } else if (main.mode === modes[1]) {
         prevAccumulator.val = 1;
-      } */
+      }
       
       cursor.shift(0, -1); // and now that that's all finally done, step up one row
       if (pseudolength === 1) { // or two, if this is the only child
@@ -1007,7 +1007,11 @@ let interaction = {
   }
   
   function unlock(e) {
-    return; // NOT CURRENTLY IMPLEMENTED
+    // only needed if in tracker mode. Otherwise, leave
+    if (main.mode !== modes[1]) {
+      return;
+    }
+    
     let parent = e.target.parentElement;
     centerCursorOnElement(parent.id);
     
