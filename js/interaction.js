@@ -279,7 +279,7 @@ let interaction = {
     } else {
       copy.setAttribute("transform", "translate(" + cursor.get().x + " " + cursor.get().y + ")");
     }
-    if (main.allowColors && main.advancedColors) {
+    if (main.allowColors && main.advancedColors && main.separateAreas) {
       copy.children[0].setAttribute("fill", "#" + areaData[setup.mapRoots[main.currentMap - 1].mapId].color);
     } else {
       copy.children[0].setAttribute("fill", "#ffffff");
@@ -360,7 +360,7 @@ let interaction = {
       shapeObject.setAttribute("transform", "translate(" + cursor.get().x + " " + cursor.get().y + ")");
     }
     // color fill, factoring in colorblind mode
-    if (main.allowColors && main.advancedColors) {
+    if (main.allowColors && main.advancedColors && main.separateAreas) {
       shapeObject.setAttribute("fill", "#" + areaData[setup.mapRoots[main.currentMap - 1].mapId].color); // color fill
     } else {
       shapeObject.setAttribute("fill", "#ffffff");
@@ -1064,7 +1064,7 @@ let interaction = {
     let clickCapture = doNothing; // when clicking, without the hovering overlay OR on touchscreen
     
     // in randomized mode, all keys are possibly required or unrequired, but we won't know until the key is collected
-    if (main.goRandom && [7, 8].includes(currentNode.type)) {
+    if (main.goRandom && [7, 8, 11].includes(currentNode.type)) {
       currentNode.type = 9;
     }
     // do different things based on the node type
@@ -1081,6 +1081,7 @@ let interaction = {
           fillColor = main.advancedColors ? "#" + areaData[main.workingData.find(n => n.id === currentNode.pointsToElevatorId).mapId].color : "#ffffff"; // get color of target elevator
         } else {
           titleText = "START"; // standard title text
+          // fillColor will be standard white
         }
         break;
       case "another": // another node, "other" but circle
@@ -1112,7 +1113,7 @@ let interaction = {
           //console.log(currentNode);
           titleText = areaData[main.workingData.find(n => n.id === currentNode.pointsToElevatorId).mapId].name.toUpperCase(); // display destination name
           fillColor = main.advancedColors ? "#" + areaData[main.workingData.find(n => n.id === currentNode.pointsToElevatorId).mapId].color : "#ffffff"; // get color of target elevator
-        }// otherwise, fall back onto the data-given label
+        } // otherwise, fall back onto the data-given label
         break;
       case "boss": // boss battle
         groupObject.id += "goal" + currentNode.id; // add specific data about node to ID
@@ -1221,7 +1222,7 @@ let interaction = {
           shapeObject = arrow_right_template.cloneNode(true);
           hoverShape = arrow_right_template.cloneNode(true);
         }
-        fillColor = main.advancedColors ? "#"+ areaData[currentNode.mapId].color : "#ffffff"; // get color of this map
+        fillColor = (main.advancedColors && main.separateAreas) ? "#"+ areaData[currentNode.mapId].color : "#ffffff"; // get color of this map
         hoverCapture = hoverBasic; // assign hover method
         clickCapture = unlock; // assign click method
         break;
@@ -1245,7 +1246,7 @@ let interaction = {
     // or the text has yet to be populated
     // or we have to mark that a certain number of keys are needed
     // so long as the current node is not an arrow (we're ignoring this value because of directions)
-    if (titleText.length !== 0 || (currentNode.textFill.length > 0 || (currentNode.numReqd > 1)) && currentNode.type !== 6) {
+    if (titleText.length !== 0 || (currentNode.textFill.length > 0 || (currentNode.numReqd > 1)) && currentNode.type !== 6 && currentNode.type !== 9) {
       textObject = document.createElementNS("http://www.w3.org/2000/svg", "text");
       textObject.classList.add("text-node");
       
@@ -1307,7 +1308,7 @@ let interaction = {
     
     // now based on the existence of a text and an image, we need to apply them to the group, with appropriate spacing
     if (textObject && imageObject && currentNode.type !== 9) { // for every shape where we have and image and text that ISN'T an "empty" node type
-      if ([7, 8].includes(currentNode.type) && main.allowColor) { // for keys unless colorblind
+      if ([7, 8, 11].includes(currentNode.type) && main.allowColor) { // for keys unless colorblind
         textObject.setAttribute("fill", "white");
       } else { // this should apply for all other shape types
         textObject.setAttribute("fill", "black");
@@ -1329,8 +1330,8 @@ let interaction = {
     // now we'll deal with external labels, for items
     let outerTextObject = null;
     let outerStr = "";
-    // for every key, required or otherwise, standard or slotted
-    if (currentNode.textOuter.length !== 0 || currentNode.type === 7 || currentNode.type === 8 || currentNode.type === 11) {
+    // for every key, required or otherwise, standard or slotted, UNLESS randomized
+    if ((currentNode.textOuter.length !== 0 || currentNode.type === 7 || currentNode.type === 8 || currentNode.type === 11) && currentNode.type !== 9) {
       outerTextObject = document.createElementNS("http://www.w3.org/2000/svg", "text");
       outerTextObject.classList.add("text-node");
       outerTextObject.classList.add("text-lg");

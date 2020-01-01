@@ -24,16 +24,7 @@ let main = {
   };
 
   function init() {
-    main.currentGame = games.m; // TODO: swap games when HUD is made
-    main.goRandom = false; // TODO: select whether vanilla or randomized
-    main.allowColors = true; // TODO: colorblind option
-    main.advancedColors = false; // TODO: select whether tons of colors, or some white/black is allowed
-    main.workingData = rawData; // TODO: make it game-dependent
-    main.separateAreas = true; // TODO: make it an option
-    setup.makeTree(); // construct data tree
-    // at this point, the data tree should be complete, with vine data on the side. No visuals have been processed yet.
-    cursor.move(0, 0); // a behind-the-scenes pointer set to the origin point of the chart (where the START node is)
-    interaction.popMap(main.currentMap); // display map 1
+    main.menu = false;
     
     if (/Android|webOS|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent)) {
       console.log("Using mobile");
@@ -42,37 +33,97 @@ let main = {
       console.log("Using desktop");
       isMobile = false;
     }
-    
-    document.getElementById("mainground").onwheel = (e) => {
-      e.preventDefault();
-      //console.log("did wheel", e);
-      interaction.zoom(e);
-    };
-    
-    document.getElementById("mainground").onmousedown = (e) => {
-      e.preventDefault();
-      //console.log("did click start", e);
-      interaction.panStart(e);
-    };
-    
-    document.getElementById("mainground").onmousemove = (e) => {
-      e.preventDefault();
-      if (interaction.readyPan) {
-        interaction.panDuring(e);
+  }
+  
+  function generate() {
+    if (main.menu) {
+      main.currentGame = games[document.forms["startupMenu"]["selectedGame"].value];
+      main.goRandom = document.forms["startupMenu"]["isRandom"].checked;
+      main.allowColors = document.forms["startupMenu"]["colorblind"].checked === false;
+      main.advancedColors = document.forms["startupMenu"]["advancedColors"].checked;
+      main.separateAreas = document.forms["startupMenu"]["separateAreas"].checked;
+      
+      main.workingData = rawData; // TODO: make it game-dependent
+      
+      let menuPointer = document.getElementById("mainMenu");
+      if (menuPointer.classList) { // browser compatibility logic
+        menuPointer.classList.remove("show-menu");
+      } else {
+        menuPointer.className += menuPointer.className.replace(/\bshow-menu\b/g);
       }
-    };
+      
+      let pointers = ["hud", "playground", "mainground", "background", "potatoes"];
+      for (const pointer of pointers) {
+        let target = document.getElementById(pointer);
+        if (target.classList) { // browser compatibility logic
+          target.classList.remove("hide-menu");
+        } else {
+          target.className += target.className.replace(/\bhide-menu\b/g);
+        }
+      }
+      
+      setup.makeTree(); // construct data tree
+      // at this point, the data tree should be complete, with vine data on the side. No visuals have been processed yet.
+      cursor.move(0, 0); // a behind-the-scenes pointer set to the origin point of the chart (where the START node is)
+      interaction.popMap(main.currentMap); // display map 1
     
-    document.getElementById("mainground").onmouseup = (e) => {
-      e.preventDefault();
-      //console.log("did click end", e);
-      interaction.panEnd(e);
-    };
+      document.getElementById("mainground").onwheel = (e) => {
+        e.preventDefault();
+        //console.log("did wheel", e);
+        interaction.zoom(e);
+      };
+      
+      document.getElementById("mainground").onmousedown = (e) => {
+        e.preventDefault();
+        //console.log("did click start", e);
+        interaction.panStart(e);
+      };
+      
+      document.getElementById("mainground").onmousemove = (e) => {
+        e.preventDefault();
+        if (interaction.readyPan) {
+          interaction.panDuring(e);
+        }
+      };
+      
+      document.getElementById("mainground").onmouseup = (e) => {
+        e.preventDefault();
+        //console.log("did click end", e);
+        interaction.panEnd(e);
+      };
 
-    main.resizeCanvas();
+      main.resizeCanvas();
+    }
+  }
+  
+  function validateStartup(e) {
+    e.preventDefault();
+    if (!main.menu) {
+      let gameInput = document.forms["startupMenu"]["selectedGame"].value;
+      
+      if (gameInput === "") {
+        let error = document.getElementsByClassName("gameError")[0];
+        
+        if (error.classList) { // browser compatibility logic
+          error.classList.remove("hide-error");
+        } else {
+          error.className += error.className.replace(/\bhide-error\b/g);
+        }
+        
+        return;
+      }
+      
+      main.menu = true;
+      generate();
+    }
   }
   
   // resize background grid to fit the browser window
   function resizeCanvas() {
+    // don't adjust background canvas if we don't yet have the data needed
+    if (!main.menu) {
+      return;
+    }
     let canvas = document.getElementById("background");
     if (canvas.width !== window.innerWidth){ // only change the dimension that changes
       canvas.width = window.innerWidth;
@@ -118,6 +169,7 @@ let main = {
   
   main.debugTree = debugTree;
   main.init = init;
+  main.validateStartup = validateStartup;
   main.resizeCanvas = resizeCanvas;
   main.getIsMobile = getIsMobile;
   main.getIsDesktop = getIsDesktop;

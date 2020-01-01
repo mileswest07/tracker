@@ -11,7 +11,68 @@
 </head>
 
 <body onresize="main.resizeCanvas()">
-  <section id="hud">
+  <section id="mainMenu" class="show-menu">
+    <div class="menu-container">
+      <h2 class="menu-header">
+        Item Dependency Explorer
+      </h2>
+      <div class="menu-body">
+        <form id="startupMenu">
+          <div class="menu-query-section">
+            <fieldset>
+              <p class="menu-query-question">
+                Select game:
+              </p>
+              <div class="menu-query-answers">
+                <select name="selectedGame">
+                  <option value="" selected>Select from the menu...</option>
+                  <option value="m">Metroid (NES)</option>
+                </select>
+              </div>
+              <p class="gameError hide-error">
+                You need to specify a game from the dropdown menu first.
+              </p>
+            </fieldset>
+          </div>
+          <div class="menu-query-section">
+            <fieldset>
+              <p class="menu-query-question">
+                Randomized run?
+              </p>
+              <div class="menu-query-answers">
+                <input type="checkbox" name="isRandom" value="isRandom">
+              </div>
+            </fieldset>
+          </div>
+          <div class="menu-query-section">
+            <fieldset>
+              <p class="menu-query-question">
+                Colorblind?
+              </p>
+              <div class="menu-query-answers">
+                <input type="checkbox" name="colorblind" value="colorblind"><br>
+                <input type="checkbox" name="advancedColors" value="advancedColors">Show advanced colors?
+              </div>
+            </fieldset>
+          </div>
+          <div class="menu-query-section">
+            <fieldset>
+              <p class="menu-query-question">
+                Show each area separately? Leaving this blank will consolidate everything to one map.
+              </p>
+              <div class="menu-query-answers">
+                <input type="checkbox" name="separateAreas" value="separateAreas" checked>
+              </div>
+            </fieldset>
+          </div>
+        </form>
+      </div>
+      <div class="menu-footer">
+        <input type="button" onclick="main.validateStartup(event)" value="Generate">
+      </div>
+    </div>
+  </section>
+  <section id="hud" class="hide-menu">
     <div class="hud-v hud-top">
       
     </div>
@@ -25,7 +86,7 @@
       
     </div>
   </section>
-  <svg id="playground" width="100%" height="100%" viewBox="0 0 432 432" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <svg id="playground" class="hide-menu" width="100%" height="100%" viewBox="0 0 432 432" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
     Your browser won't support this app. Please try another browser.
     <defs></defs>
     <g id="templatesArea" style="display:none;">
@@ -62,11 +123,11 @@
     <g id="junctions"></g>
     <g id="mainMeat"></g>
   </svg>
-  <div id="mainground">
+  <div id="mainground" class="hide-menu">
     
   </div>
-  <canvas id="background" width="500" height="500">Your browser won't support this app. Please try another browser.</canvas>
-  <section id="potatoes">
+  <canvas id="background" width="500" height="500" class="hide-menu">Your browser won't support this app. Please try another browser.</canvas>
+  <section id="potatoes" class="hide-menu">
     
   </section>
   <section id="hiddenSpriteSheet">

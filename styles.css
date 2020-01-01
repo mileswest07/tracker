@@ -7,6 +7,27 @@ body {
   overflow: hidden;
 }
 
+#mainMenu {
+  z-index: 3000;
+}
+
+#mainMenu:not(.show-menu) {
+  display: none;
+}
+
+#mainMenu .gameError {
+  color: red;
+  font-weight: bold;
+}
+
+#mainMenu .gameError.hide-error {
+  display: none;
+}
+
+.hide-menu {
+  display: none;
+}
+
 #hud {
   display: none; /* currently hidden until we're ready to code it */
   z-index: 1000;
