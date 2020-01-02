@@ -92,6 +92,12 @@ let main = {
         //console.log("did click end", e);
         interaction.panEnd(e);
       };
+      
+      if (main.getIsMobile()) {
+        window.onorientationchange = (e) => {
+          main.resizeCanvas();
+        };
+      }
 
       main.resizeCanvas();
     }

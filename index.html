@@ -13,58 +13,60 @@
 <body onresize="main.resizeCanvas()">
   <section id="mainMenu" class="show-menu">
     <div class="menu-container">
-      <h2 class="menu-header">
-        Item Dependency Explorer
-      </h2>
+      <div class="menu-header">
+        <h2>
+          Item Dependency Explorer
+        </h2>
+      </div>
       <div class="menu-body">
         <form id="startupMenu">
-          <div class="menu-query-section">
-            <fieldset>
-              <p class="menu-query-question">
-                Select game:
-              </p>
-              <div class="menu-query-answers">
-                <select name="selectedGame">
-                  <option value="" selected>Select from the menu...</option>
-                  <option value="m">Metroid (NES)</option>
-                </select>
-              </div>
-              <p class="gameError hide-error">
-                You need to specify a game from the dropdown menu first.
-              </p>
-            </fieldset>
-          </div>
-          <div class="menu-query-section">
-            <fieldset>
-              <p class="menu-query-question">
-                Randomized run?
-              </p>
-              <div class="menu-query-answers">
+          <fieldset>
+            <p class="menu-query-section">
+              Select game:
+              <select name="selectedGame">
+                <option value="" selected>Select from the menu...</option>
+                <option value="m">Metroid (NES)</option>
+              </select>
+            </p>
+            <p class="gameError hide-error">
+              You need to specify a game from the dropdown menu first.
+            </p>
+          </fieldset>
+          <fieldset>
+            <p class="menu-query-section">
+              <label class="slider-switch">
                 <input type="checkbox" name="isRandom" value="isRandom">
-              </div>
-            </fieldset>
-          </div>
-          <div class="menu-query-section">
-            <fieldset>
-              <p class="menu-query-question">
-                Colorblind?
-              </p>
-              <div class="menu-query-answers">
-                <input type="checkbox" name="colorblind" value="colorblind"><br>
-                <input type="checkbox" name="advancedColors" value="advancedColors">Show advanced colors?
-              </div>
-            </fieldset>
-          </div>
-          <div class="menu-query-section">
-            <fieldset>
-              <p class="menu-query-question">
-                Show each area separately? Leaving this blank will consolidate everything to one map.
-              </p>
-              <div class="menu-query-answers">
+                <span class="slider"></span>
+              </label>
+              <span>Randomized run?</span>
+            </p>
+          </fieldset>
+          <fieldset>
+            <p class="menu-query-section">
+              <label class="slider-switch">
+                <input type="checkbox" name="colorblind" value="colorblind">
+                <span class="slider"></span>
+              </label>
+              Colorblind?
+            </p>
+                
+            <p class="menu-query-section">
+              <label class="slider-switch">
+                <input type="checkbox" name="advancedColors" value="advancedColors">
+                <span class="slider"></span>
+              </label>
+              Show advanced colors?
+            </p>
+          </fieldset>
+          <fieldset>
+            <p class="menu-query-section">
+              <label class="slider-switch">
                 <input type="checkbox" name="separateAreas" value="separateAreas" checked>
-              </div>
-            </fieldset>
-          </div>
+                <span class="slider"></span>
+              </label>
+              Show each area separately? Turning this off will consolidate everything to one map.
+            </p>
+          </fieldset>
         </form>
       </div>
       <div class="menu-footer">
