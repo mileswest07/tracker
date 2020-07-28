@@ -772,6 +772,22 @@ const rawData = [
     "pointsToElevatorId": 7
   }, {
     "id": 59,
+    "type": 6,
+    "parentId": 58,
+    "image": "",
+    "cousinsTo": [
+      60
+    ],
+    "pickupType": 0,
+    "screenshot": "",
+    "textFill": "up",
+    "textOuter": "",
+    "numReqd": 0,
+    "canBeSBd": false,
+    "mapId": 3,
+    "pointsToElevatorId": -1
+  }, {
+    "id": 60,
     "type": 5,
     "parentId": 58,
     "image": "iceBeam",
@@ -784,29 +800,18 @@ const rawData = [
     "mapId": 3,
     "pointsToElevatorId": -1
   }, {
-    "id": 60,
+    "id": 61,
     "type": 6,
     "parentId": 58,
     "image": "",
-    "cousinsTo": [65],
+    "cousinsTo": [
+      66
+    ],
     "pickupType": 0,
     "screenshot": "",
     "textFill": "down",
     "textOuter": "",
     "numReqd": 0,
-    "canBeSBd": false,
-    "mapId": 3,
-    "pointsToElevatorId": -1
-  }, {
-    "id": 61,
-    "type": 5,
-    "parentId": 58,
-    "image": "missile",
-    "pickupType": 3,
-    "screenshot": "",
-    "textFill": "",
-    "textOuter": "",
-    "numReqd": 1,
     "canBeSBd": false,
     "mapId": 3,
     "pointsToElevatorId": -1
@@ -851,10 +856,22 @@ const rawData = [
     "pointsToElevatorId": -1
   }, {
     "id": 65,
-    "type": 5,
-    "parentId": 59,
+    "type": 7,
+    "parentId": 58,
     "image": "missile",
-    "cousinsTo": [60],
+    "pickupType": 3,
+    "screenshot": "",
+    "textFill": "",
+    "textOuter": "",
+    "numReqd": 0,
+    "canBeSBd": false,
+    "mapId": 3,
+    "pointsToElevatorId": -1
+  }, {
+    "id": 66,
+    "type": 5,
+    "parentId": 60,
+    "image": "missile",
     "pickupType": 3,
     "screenshot": "",
     "textFill": "",
@@ -864,24 +881,11 @@ const rawData = [
     "mapId": 3,
     "pointsToElevatorId": -1
   }, {
-    "id": 66,
-    "type": 7,
-    "parentId": 61,
-    "image": "energyTank",
-    "pickupType": 7,
-    "screenshot": "",
-    "textFill": "",
-    "textOuter": "",
-    "numReqd": 0,
-    "canBeSBd": false,
-    "mapId": 3,
-    "pointsToElevatorId": -1
-  }, {
     "id": 67,
     "type": 7,
     "parentId": 62,
-    "image": "missile",
-    "pickupType": 3,
+    "image": "energyTank",
+    "pickupType": 7,
     "screenshot": "",
     "textFill": "",
     "textOuter": "",
@@ -905,7 +909,7 @@ const rawData = [
   }, {
     "id": 69,
     "type": 5,
-    "parentId": 65,
+    "parentId": 66,
     "image": "missile",
     "pickupType": 3,
     "screenshot": "",
@@ -918,7 +922,7 @@ const rawData = [
   }, {
     "id": 70,
     "type": 7,
-    "parentId": 65,
+    "parentId": 66,
     "image": "missile",
     "pickupType": 3,
     "screenshot": "",
