@@ -34,6 +34,8 @@ let interaction = {
         }
       }
     }
+    interaction.max.x = 144;
+    interaction.max.y = 144;
   }
   
   // show map panel
@@ -1522,16 +1524,26 @@ let interaction = {
       let viewBoxProps = play.getAttribute("viewBox").split(' ');
       
       let newX = parseFloat(viewBoxProps[0]) + e.offsetX - interaction.prev.x;
+      let maxX = interaction.max.x - parseFloat(viewBoxProps[2])
       if (newX <= interaction.min.x) {
         newX = interaction.min.x;
-      } else if (newX >= interaction.max.x - parseFloat(viewBoxProps[2])) {
-        newX = interaction.max.x - parseFloat(viewBoxProps[2]);
+      } else if (newX >= maxX) {
+        let bareMinX = maxX;
+        if (maxX < interaction.min.x) {
+          bareMinX = interaction.min.x;
+        }
+        newX = bareMinX;
       }
       let newY = parseFloat(viewBoxProps[1]) + e.offsetY - interaction.prev.y;
+      let maxY = interaction.max.y - parseFloat(viewBoxProps[3])
       if (newY <= interaction.min.y) {
         newY = interaction.min.y;
-      } else if (newY >= interaction.max.y - parseFloat(viewBoxProps[3])) {
-        newY = interaction.max.y - parseFloat(viewBoxProps[3]);
+      } else if (newY >= maxY) {
+        let bareMinY = maxY;
+        if (maxY < interaction.min.y) {
+          bareMinY = interaction.min.y;
+        }
+        newY = bareMinY;
       }
       
       let newViewBox = [
