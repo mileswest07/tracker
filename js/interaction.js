@@ -1489,11 +1489,15 @@ let interaction = {
     }
     newX = centerX - newWidth / 2.0;
     newY = centerY - newHeight / 2.0;
-    if (newX <= 0) {
-      newX = 0;
+    if (newX <= interaction.min.x) {
+      newX = interaction.min.x;
+    } else if (newX > interaction.max.x - newWidth) {
+      newX = interaction.max.x - newWidth
     }
-    if (newY <= 0) {
-      newY = 0;
+    if (newY <= interaction.min.y) {
+      newY = interaction.min.y;
+    } else if (newY > interaction.max.y - newHeight) {
+      newY = interaction.max.y - newHeight
     }
     let newViewBox = [
       newX,
@@ -1519,11 +1523,11 @@ let interaction = {
   }
   
   function panDuring(e) {
-    if (interaction.readyPan && e.target.tagName === "svg") {
+    if (interaction.readyPan) {
       let play = document.getElementById("mapSVG-" + main.currentMap);
       let viewBoxProps = play.getAttribute("viewBox").split(' ');
       
-      let newX = parseFloat(viewBoxProps[0]) + e.offsetX - interaction.prev.x;
+      let newX = parseFloat(viewBoxProps[0]) + e.clientX - interaction.prev.x;
       let maxX = interaction.max.x - parseFloat(viewBoxProps[2])
       if (newX <= interaction.min.x) {
         newX = interaction.min.x;
@@ -1534,7 +1538,7 @@ let interaction = {
         }
         newX = bareMinX;
       }
-      let newY = parseFloat(viewBoxProps[1]) + e.offsetY - interaction.prev.y;
+      let newY = parseFloat(viewBoxProps[1]) + e.clientY - interaction.prev.y;
       let maxY = interaction.max.y - parseFloat(viewBoxProps[3])
       if (newY <= interaction.min.y) {
         newY = interaction.min.y;
