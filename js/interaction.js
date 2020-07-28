@@ -11,7 +11,9 @@ let interaction = {
   min: {
     x: 0,
     y: 0
-  }
+  },
+  maxZoomX: 3,
+  maxZoomY: 3
 };
 
 (function() {
@@ -182,7 +184,8 @@ let interaction = {
     } else {
       newStr.push(result[3]);
     }
-    
+    interaction.maxZoomX = (interaction.max.x - interaction.min.x) / 144
+    interaction.maxZoomY = (interaction.max.y - interaction.min.y) / 144
     mapSearch.setAttribute("viewBox", newStr.join(' '));
   }
   
@@ -1468,7 +1471,7 @@ let interaction = {
     let centerX = e.clientX;
     let centerY = e.clientY;
     
-    if (e.target !== play) {
+    if (e.target !== play && e.target.parentElement.attributes.transform) {
       centerX = parseInt(e.target.parentElement.attributes.transform.value.match(digitPattern)[0]);
       centerY = parseInt(e.target.parentElement.attributes.transform.value.match(digitPattern)[1]);
     }
@@ -1496,6 +1499,10 @@ let interaction = {
       newWidth,
       newHeight
     ];
+    if ((newWidth) / 144 > interaction.maxZoomX && (newHeight) / 144 > interaction.maxZoomY) {
+      // only zoom out enough to fit the whole chart on screen
+      return;
+    }
     play.setAttribute("viewBox", newViewBox.join(' '));
   }
   
@@ -1517,14 +1524,14 @@ let interaction = {
       let newX = parseFloat(viewBoxProps[0]) + e.offsetX - interaction.prev.x;
       if (newX <= interaction.min.x) {
         newX = interaction.min.x;
-      } else if (newX >= interaction.max.x) {
-        newX = interaction.max.x;
+      } else if (newX >= interaction.max.x - parseFloat(viewBoxProps[2])) {
+        newX = interaction.max.x - parseFloat(viewBoxProps[2]);
       }
       let newY = parseFloat(viewBoxProps[1]) + e.offsetY - interaction.prev.y;
       if (newY <= interaction.min.y) {
         newY = interaction.min.y;
-      } else if (newY >= interaction.max.y) {
-        newY = interaction.max.y;
+      } else if (newY >= interaction.max.y - parseFloat(viewBoxProps[3])) {
+        newY = interaction.max.y - parseFloat(viewBoxProps[3]);
       }
       
       let newViewBox = [
