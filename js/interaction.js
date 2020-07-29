@@ -1288,16 +1288,52 @@ let interaction = {
       textObject.setAttribute("y", "9"); // slight vertical offset
       textObject.setAttribute("fill", "black");
       textObject.setAttribute("text-anchor", "middle"); // centered
+      textObject.innerHTML = "";
       textOffset = 39; // 39 pixels is perfect for "lg" text offset, if an image needs to be added
       
       if (titleText.length !== 0) { // if we already have text set, based on earlier code
-        textObject.classList.add("text-lg");
-        textObject.innerHTML = titleText;
-      } else if (currentNode.numReqd > 1 && (currentNode.type === 5 || currentNode.type === 12)) { // display required value
+        let innerStr = titleText.split(" ");
+        let rollingText = "";
+        let linesOfText = 0;
+        let deltaY = 0
+        for (let i = 0; i < innerStr.length; i++) {
+          if (rollingText.length > 0) { // insert a space between words if still rolling
+            rollingText += " ";
+          }
+          rollingText += innerStr[i];
+          if (rollingText.length >= 5 || i + 1 === innerStr.length) { // If the text is longer than one line, cut it. Also process the last line of a text.
+            linesOfText++;
+            let tspan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
+            if (rollingText.length > 12) {
+              tspan.classList.add("text-xs");
+              deltaY += 12 * 5 / 6;
+            } else if (rollingText.length > 10) {
+              tspan.classList.add("text-sm");
+              deltaY += 16 * 5 / 6;
+            } else if (rollingText.length > 7) {
+              tspan.classList.add("text-md");
+              deltaY += 20 * 5 / 6;
+            } else {
+              tspan.classList.add("text-lg");
+              deltaY += 24 * 5 / 6;
+            }
+            tspan.setAttribute("x", "0");
+            tspan.setAttribute("dy", "1.2em"); // includes line spacing
+            if (linesOfText == 1) {
+              tspan.setAttribute("dy", "0"); // ignore if only one line
+              deltaY = 0;
+            }
+            tspan.textContent = rollingText; // paste the text to the line
+            textObject.appendChild(tspan);
+            rollingText = ""; // reset current text chunk
+          }
+        }
+        textObject.setAttribute("y", (9 - deltaY).toString());
+      } else if (currentNode.numReqd > 1 && (currentNode.type === 5 || currentNode.type === 12)) { // display REquired value
         textObject.classList.add("text-md"); // apply the right style
         textObject.innerHTML = "Req: " + currentNode.numReqd;
         textOffset -= 4;
-      } else if (currentNode.numReqd > 1) { // display required value
+      } else if (currentNode.numReqd > 1) { // display ACquired value
         textObject.classList.add("text-md"); // apply the right style
         textObject.setAttribute("y", "0"); // no vertical offset
         textObject.innerHTML = "x" + currentNode.numReqd;
@@ -1308,8 +1344,39 @@ let interaction = {
         textObject.innerHTML = "S";
         textOffset = 0;
       } else {
-        textObject.classList.add("text-lg");
-        textObject.innerHTML = currentNode.textFill;
+        let innerStr = currentNode.textFill.split(" ");
+        let rollingText = "";
+        let linesOfText = 0;
+        let deltaY = 0
+        for (let i = 0; i < innerStr.length; i++) {
+          if (rollingText.length > 0) { // insert a space between words if still rolling, ignore last word
+            rollingText += " ";
+          }
+          rollingText += innerStr[i];
+          if (rollingText.length >= 5 || i + 1 === innerStr.length) { // If the text is longer than one line, cut it. Also process the last line of a text.
+            let tspan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
+            if (rollingText.length > 12) {
+              tspan.classList.add("text-xs");
+              deltaY += 12 * 5 / 6;
+            } else if (rollingText.length > 10) {
+              tspan.classList.add("text-sm");
+              deltaY += 16 * 5 / 6;
+            } else if (rollingText.length > 7) {
+              tspan.classList.add("text-md");
+              deltaY += 20 * 5 / 6;
+            } else {
+              tspan.classList.add("text-lg");
+              deltaY += 24 * 5 / 6;
+            }
+            tspan.setAttribute("x", "0");
+            tspan.setAttribute("dy", "1.2em");
+            tspan.textContent = rollingText; // paste the text to the line
+            textObject.appendChild(tspan);
+            linesOfText++;
+            rollingText = ""; // reset current text chunk
+          }
+        }
+        textObject.setAttribute("y", (9 - deltaY).toString());
       }
     }
     
