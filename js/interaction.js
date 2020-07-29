@@ -4,16 +4,19 @@ let interaction = {
     x: 0,
     y: 0
   },
-  max: {
-    x: 432,
-    y: 432
-  },
+  max: [
+  {},
+  {
+    x: 144,
+    y: 144,
+    zoomX: 1,
+    zoomY: 1
+  }
+  ],
   min: {
     x: 0,
     y: 0
-  },
-  maxZoomX: 3,
-  maxZoomY: 3
+  }
 };
 
 (function() {
@@ -34,8 +37,6 @@ let interaction = {
         }
       }
     }
-    interaction.max.x = 144;
-    interaction.max.y = 144;
   }
   
   // show map panel
@@ -169,26 +170,44 @@ let interaction = {
 
   function expandViewbox() {
     let mapSearch = document.getElementById("mapSVG-" + main.currentMap); // for whatever the currently-displayed map
-    let str = mapSearch.attributes.viewBox.value;
-    let result = str.match(digitPattern);
-    let newStr = [];
-    newStr.push(result[0]);
-    newStr.push(result[1]);
-    if (parseInt(result[2]) < (cursor.get().x + 144)) { // if currently at the edge of the map
-      newStr.push(cursor.get().x + 144 + 72); // if needed, expand with a margin
-      interaction.max.x = newStr[2];
-    } else {
-      newStr.push(result[2]);
+    let viewBoxProps = mapSearch.getAttribute("viewBox").split(' ');
+    let oldX = parseFloat(viewBoxProps[0]);
+    let oldY = parseFloat(viewBoxProps[1]);
+    let oldWidth = parseFloat(viewBoxProps[2]);
+    let oldHeight = parseFloat(viewBoxProps[3]);
+    let newWidth = oldWidth;
+    let newHeight = oldHeight;
+
+    if (oldWidth < (cursor.get().x + 144)) { // if currently at the edge of the map
+      interaction.max[main.currentMap].x = Math.max(interaction.max[main.currentMap].x, cursor.get().x + 144);
+      newWidth = interaction.max[main.currentMap].x;
     }
-    if (parseInt(result[3]) < (cursor.get().y + 144)) { // if currently at the edge of the map
-      newStr.push(cursor.get().y + 144 + 72); // if needed, expand with a margin
-      interaction.max.y = newStr[3];
-    } else {
-      newStr.push(result[3]);
+    if (oldHeight < (cursor.get().y + 144)) { // if currently at the edge of the map
+      interaction.max[main.currentMap].y = Math.max(interaction.max[main.currentMap].y, cursor.get().y + 144);
+      //newHeight = interaction.max[main.currentMap].y;
     }
-    interaction.maxZoomX = (interaction.max.x - interaction.min.x) / 144
-    interaction.maxZoomY = (interaction.max.y - interaction.min.y) / 144
-    mapSearch.setAttribute("viewBox", newStr.join(' '));
+    newHeight = newWidth * window.innerHeight / window.innerWidth; // proportionately sizing up viewport
+    
+    if (newHeight <= 144) {
+      newHeight = 144;
+    }
+    
+    if (!setup.mapRoots[main.currentMap - 1].expanded) {
+      interaction.max[main.currentMap].x = 288;
+      newWidth = 288;
+      interaction.max[main.currentMap].y = 288;
+      newHeight = 288;
+    }
+    
+    interaction.max[main.currentMap].zoomX = (interaction.max[main.currentMap].x - interaction.min.x) / 144
+    interaction.max[main.currentMap].zoomY = (interaction.max[main.currentMap].y - interaction.min.y) / 144
+    let newViewBox = [
+      oldX,
+      oldY,
+      newWidth,
+      newHeight
+    ];
+    mapSearch.setAttribute("viewBox", newViewBox.join(' '));
   }
   
   function getCurrentMapElement(childCategory) {
@@ -471,7 +490,7 @@ let interaction = {
       laterCoords = destCoords;
     }
     
-    let maxHeight = sourceCoords[1] > destCoords[1] ? sourceCoords[1] : destCoords[1];
+    let maxHeight = Math.max(sourceCoords[1], destCoords[1]);
     maxHeight += 144; // add one more space in order to clear the last row in each column
     
     // calculate drop distance for source node
@@ -819,7 +838,7 @@ let interaction = {
       // mapSearch.setAttribute("width", "60%"); //TODO: once we begin with the HUD upgrade
       mapSearch.setAttribute("height", "100%");
       // mapSearch.setAttribute("height", "60%"); //TODO: once we begin with the HUD upgrade
-      mapSearch.setAttribute("viewBox", "0 0 432 432"); // 3 x 3 map for a default size
+      mapSearch.setAttribute("viewBox", "0 0 144 144"); // 1 x 1 map for a default size
       mapSearch.setAttribute("xmlns", "http://www.w3.org/2000/svg");
       mapSearch.setAttributeNS("http://www.w3.org/2000/svg", "xlink", "http://www.w3.org/1999/xlink");
       
@@ -836,6 +855,12 @@ let interaction = {
       mapSearch.appendChild(junctions);
       mapSearch.appendChild(mainMeat);
       mapSource.appendChild(mapSearch);
+      interaction.max[mapId] = {
+        x: 288,
+        y: 288,
+        zoomX: 1,
+        zoomY: 1
+      }
       
       // create map panel root/starting node
       let newNode = makeNode(setup.mapRoots[mapId - 1], 0, 0);
@@ -1464,6 +1489,11 @@ let interaction = {
   
   // zoom in and out, dynamic based on whether on desktop or on mobile, using mouse or using HUD elements
   function zoom(e) {
+    // if only the START button is visible, ignore functionality
+    if (!setup.mapRoots[main.currentMap - 1].expanded) {
+      return;
+    }
+    
     let play = document.getElementById("mapSVG-" + main.currentMap);
     let viewBoxProps = play.getAttribute("viewBox").split(' ');
     let oldX = parseFloat(viewBoxProps[0]);
@@ -1472,13 +1502,14 @@ let interaction = {
     let oldHeight = parseFloat(viewBoxProps[3]);
     let centerX = e.clientX;
     let centerY = e.clientY;
+    let isZoomingOut = e.deltaY > 0;
     
     if (e.target !== play && e.target.parentElement.attributes.transform) {
       centerX = parseInt(e.target.parentElement.attributes.transform.value.match(digitPattern)[0]);
       centerY = parseInt(e.target.parentElement.attributes.transform.value.match(digitPattern)[1]);
     }
     
-    if (e.deltaY > 0) {
+    if (isZoomingOut) {
       // scroll down, so zoom out
       newWidth = oldWidth * 2.0;
       newHeight = oldHeight * 2.0;
@@ -1491,28 +1522,51 @@ let interaction = {
     newY = centerY - newHeight / 2.0;
     if (newX <= interaction.min.x) {
       newX = interaction.min.x;
-    } else if (newX > interaction.max.x - newWidth) {
-      newX = interaction.max.x - newWidth
+    } else if (newX >= interaction.max[main.currentMap].x - newWidth) {
+      newX = interaction.max[main.currentMap].x - newWidth;
     }
     if (newY <= interaction.min.y) {
       newY = interaction.min.y;
-    } else if (newY > interaction.max.y - newHeight) {
-      newY = interaction.max.y - newHeight
+    } else if (newY >= interaction.max[main.currentMap].y - newHeight) {
+      newY = interaction.max[main.currentMap].y - newHeight;
     }
+    
+    // zoomed too far in
+    if (!isZoomingOut && newWidth <= 288) {
+      //console.log("zoomed too far in : X")
+      return;
+    }
+    if (!isZoomingOut && newHeight <= 144) {
+      //console.log("zoomed too far in ::: y")
+      return;
+    }
+    
+    // zoomed too far out
+    if (isZoomingOut && newWidth > interaction.max[main.currentMap].x) {
+      if (oldHeight > interaction.max[main.currentMap].y) {
+        //console.log("zoomed too far out ::: y")
+        return;
+      }
+      //console.log("maybe zoomed too far out : X")
+      // TODO: zooming intervals between maxwidth and maxheight
+    }
+    
+    // console.log(window.innerWidth, newWidth, "zoom", '' + parseFloat(interaction.max[main.currentMap].zoomX / ((newWidth) / 144.0)) + 'x')
     let newViewBox = [
       newX,
       newY,
       newWidth,
       newHeight
     ];
-    if ((newWidth) / 144 > interaction.maxZoomX && (newHeight) / 144 > interaction.maxZoomY) {
-      // only zoom out enough to fit the whole chart on screen
-      return;
-    }
     play.setAttribute("viewBox", newViewBox.join(' '));
   }
   
   function panStart(e) {
+    // if only the START button is visible, ignore functionality
+    if (!setup.mapRoots[main.currentMap - 1].expanded) {
+      return;
+    }
+    
     if (e.target.tagName === "svg") {
       interaction.readyPan = true;
       interaction.prev.x = e.offsetX;
@@ -1528,7 +1582,7 @@ let interaction = {
       let viewBoxProps = play.getAttribute("viewBox").split(' ');
       
       let newX = parseFloat(viewBoxProps[0]) + e.clientX - interaction.prev.x;
-      let maxX = interaction.max.x - parseFloat(viewBoxProps[2])
+      let maxX = interaction.max[main.currentMap].x - parseFloat(viewBoxProps[2]);
       if (newX <= interaction.min.x) {
         newX = interaction.min.x;
       } else if (newX >= maxX) {
@@ -1539,7 +1593,7 @@ let interaction = {
         newX = bareMinX;
       }
       let newY = parseFloat(viewBoxProps[1]) + e.clientY - interaction.prev.y;
-      let maxY = interaction.max.y - parseFloat(viewBoxProps[3])
+      let maxY = interaction.max[main.currentMap].y - parseFloat(viewBoxProps[3]);
       if (newY <= interaction.min.y) {
         newY = interaction.min.y;
       } else if (newY >= maxY) {
