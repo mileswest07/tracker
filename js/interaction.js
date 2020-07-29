@@ -192,6 +192,10 @@ let interaction = {
       newHeight = 144;
     }
     
+    if (main.getIsMobile()) {
+      newHeight = interaction.max[main.currentMap].y;
+    }
+
     if (!setup.mapRoots[main.currentMap - 1].expanded) {
       interaction.max[main.currentMap].x = 288;
       newWidth = 288;
