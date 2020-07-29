@@ -112,7 +112,7 @@ const pickupType = [
   "Imago Defeated",
   "Ruins Test Defeated",
   "Mecha Ridley Defeated",
-  "Poweres Suit Samus",
+  "Powered Suit Samus",
   "Zero Suit Samus",
   "Ancient Power Suit Samus",
   "Scan Pulse",
