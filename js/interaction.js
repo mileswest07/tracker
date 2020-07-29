@@ -1486,6 +1486,7 @@ let interaction = {
       groupObject.addEventListener("mouseleave", removeHover); // and remove hovering effect
     }
     groupObject.addEventListener("click", clickCapture); // apply clicking method
+    // TODO: fix inconsistency with mobile touching on text children
     
     // for each elevator that isn't a map root, we'll also include an arrow pointing south
     if (currentNode.type === 2 && currentNode.parent !== -1) {
