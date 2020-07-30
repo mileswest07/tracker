@@ -429,6 +429,7 @@ let interaction = {
         destinationId += "_end" + destinationRaw.id;
         break;
       case "lock":
+      case "toll":
         destinationId += "_lock" + destinationRaw.id;
         break;
       case "key":
@@ -1162,7 +1163,8 @@ let interaction = {
         hoverCapture = hoverBasic; // assign hover method
         clickCapture = unlock; // assign click method
         break;
-      case "lock": // lock
+      case "lock": // possession lock
+      case "toll": // consumption lock
         groupObject.id += "lock" + currentNode.id; // add specific data about node to ID
         shapeObject = lock_template.cloneNode(true); // square
         hoverShape = lock_template.cloneNode(true); // square
@@ -1179,7 +1181,7 @@ let interaction = {
         hoverCapture = hoverBasic; // assign hover method
         clickCapture = unlock; // assign click method
         break;
-      case "access": // access
+      case "access": // one-way access lock
         groupObject.id += "access" + currentNode.id; // add specific data about node to ID
         shapeObject = access_template.cloneNode(true); // hexagon
         hoverShape = access_template.cloneNode(true); // hexagon
@@ -1190,7 +1192,7 @@ let interaction = {
         clickCapture = unlock; // assign click method
         break;
       case "key": // required key
-        groupObject.id += "unclaimed-key" + currentNode.id; // add specific data about node to ID
+        groupObject.id += "key" + currentNode.id; // add specific data about node to ID
         shapeObject = key_template.cloneNode(true); // diamond
         hoverShape = key_template.cloneNode(true); // diamond
         imageClass = "key-image"; // apply SCREEN

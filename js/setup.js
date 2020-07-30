@@ -18,7 +18,7 @@ let setup = {
     let returnValue = 0;
     let compiledArray = [];
     let interimArray = [];
-    let properOrder = [13, 1, 12, 5, 6, 11, 8, 3, 7, 9, 2, 4, 14, 10, 0];
+    let properOrder = [13, 1, 12, 5, 16, 15, 6, 3, 11, 8, 7, 9, 2, 4, 14, 10, 0];
     for (let i = 0; i < properOrder.length; i++) {
       interimArray[i] = [];
     }

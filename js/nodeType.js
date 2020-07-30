@@ -14,5 +14,6 @@ const nodeType = [
   "access",
   "end",
   "another",
-  "unknown"
+  "unknown",
+  "toll"
 ];
