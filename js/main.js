@@ -1,9 +1,9 @@
 let main = {
-  currentMap: 1 // start at map 1 no matter which game is selected
+  currentMap: 1, // start at map 1 no matter which game is selected,
+  numMapsReady: 5 // TODO: phase this out, maybe
 };
 
-(function() {
-  let numMapsReady = 5; // TODO: phase this out
+(() => {
   let isMobile = false;
   
   const games = {
@@ -43,7 +43,7 @@ let main = {
       main.advancedColors = document.forms["startupMenu"]["advancedColors"].checked;
       main.separateAreas = document.forms["startupMenu"]["separateAreas"].checked;
       
-      main.workingData = rawData; // TODO: make it game-dependent
+      main.workingData = rawData; // TODO: load data dynamically
       main.mode = modes[0]; // TODO: make this an option
       
       let menuPointer = document.getElementById("mainMenu");
@@ -65,6 +65,7 @@ let main = {
       
       setup.makeTree(); // construct data tree
       // at this point, the data tree should be complete, with vine data on the side. No visuals have been processed yet.
+      checklist.build(); // setup checklist
       cursor.move(0, 0); // a behind-the-scenes pointer set to the origin point of the chart (where the START node is)
       interaction.popMap(main.currentMap); // display map 1
     
@@ -158,12 +159,12 @@ let main = {
     console.log("vine cluster:: total", setup.mapVines);
     console.log("close relatives:: total", setup.mapRelatives);
     let saveMap = main.currentMap;
-    for (let i = 0; i < numMapsReady; i++) {
+    for (let i = 0; i < main.numMapsReady; i++) {
       main.currentMap = i + 1;
       interaction.navigateTree(debugRecursion);
     }
     main.currentMap = saveMap;
-    console.log("maps for", numMapsReady, "/", setup.mapRoots.length, "areas ready");
+    console.log("maps for", main.numMapsReady, "/", setup.mapRoots.length, "areas ready");
   }
   
   function getIsMobile() {

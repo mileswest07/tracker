@@ -1,6 +1,6 @@
 let cursor = {};
 
-(function() {
+(() => {
   let _x = 0;
   let _y = 0;
 

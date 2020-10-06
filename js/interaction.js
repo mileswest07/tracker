@@ -19,7 +19,7 @@ let interaction = {
   }
 };
 
-(function() {
+(() => {
   let digitPattern = /\d+/g;
   let numGradsAlready = 0;
   
@@ -1106,6 +1106,8 @@ let interaction = {
     if (main.goRandom && [7, 8, 11].includes(currentNode.type)) {
       currentNode.type = 9;
     }
+    // in randomized mode, there may be some locks that are shuffled around
+    // TODO: add logic for randomized locks (type 15)
     // do different things based on the node type
     switch(nodeType[currentNode.type]) {
       case "start": // starting node
@@ -1400,7 +1402,7 @@ let interaction = {
         imageObject.setAttribute("x", "-40");
         imageObject.setAttribute("y", "-40");
       } else {
-        if (currentNode.type === 9) { // if we're doing randomized mode and each item is hidden, display item spheres instead
+        if (currentNode.type === 9 || currentNode.type === 15) { // if we're doing randomized mode and each item is hidden, display item spheres instead
           imageObject.setAttributeNS("http://www.w3.org/1999/xlink", "href", "images/icons/itemSphere.png");
         } else { // otherwise, just display the item image
           imageObject.setAttributeNS("http://www.w3.org/1999/xlink", "href", "images/icons/" + currentNode.image + ".png");
@@ -1414,7 +1416,7 @@ let interaction = {
     }
     
     // now based on the existence of a text and an image, we need to apply them to the group, with appropriate spacing
-    if (textObject && imageObject && currentNode.type !== 9) { // for every shape where we have and image and text that ISN'T an "empty" node type
+    if (textObject && imageObject && currentNode.type !== 9 && currentNode.type !== 15) { // for every shape where we have and image and text that ISN'T an "empty" node type
       if ([7, 8, 11].includes(currentNode.type) && main.allowColor) { // for keys unless colorblind
         textObject.setAttribute("fill", "white");
       } else { // this should apply for all other shape types
@@ -1438,7 +1440,7 @@ let interaction = {
     let outerTextObject = null;
     let outerStr = "";
     // for every key, required or otherwise, standard or slotted, UNLESS randomized
-    if ((currentNode.textOuter.length !== 0 || currentNode.type === 7 || currentNode.type === 8 || currentNode.type === 11) && currentNode.type !== 9) {
+    if ((currentNode.textOuter.length !== 0 || currentNode.type === 7 || currentNode.type === 8 || currentNode.type === 11) && currentNode.type !== 9 && currentNode.type !== 15) {
       outerTextObject = document.createElementNS("http://www.w3.org/2000/svg", "text");
       outerTextObject.classList.add("text-node");
       outerTextObject.classList.add("text-lg");
@@ -1655,7 +1657,8 @@ let interaction = {
       let play = document.getElementById("mapSVG-" + main.currentMap);
       let viewBoxProps = play.getAttribute("viewBox").split(' ');
       
-      let newX = parseFloat(viewBoxProps[0]) + e.clientX - interaction.prev.x;
+      // TODO: factor in zoom jank
+      let newX = parseFloat(viewBoxProps[0]) + interaction.prev.x - e.clientX;
       let maxX = interaction.max[main.currentMap].x - parseFloat(viewBoxProps[2]);
       if (newX <= interaction.min.x) {
         newX = interaction.min.x;
@@ -1666,7 +1669,7 @@ let interaction = {
         }
         newX = bareMinX;
       }
-      let newY = parseFloat(viewBoxProps[1]) + e.clientY - interaction.prev.y;
+      let newY = parseFloat(viewBoxProps[1]) + interaction.prev.y - e.clientY;
       let maxY = interaction.max[main.currentMap].y - parseFloat(viewBoxProps[3]);
       if (newY <= interaction.min.y) {
         newY = interaction.min.y;

@@ -5,7 +5,7 @@ let setup = {
   mapRelatives: []
 };
 
-(function() {
+(() => {
   function sortingNumbers(a, b) {
     return a - b;
   }
@@ -67,17 +67,12 @@ let setup = {
     return returnValue;
   }
   
-  // obtain list of all children to current node
-  function listConnections(currentNode) {
-    return main.workingData.filter(node => node.parentId === currentNode.id);
-  }
-  
   // for each node in the map
   function recursionA(currentNode, mapNodes) {
     if (!currentNode.hasOwnProperty("children")) {
       currentNode.children = []; // create children list for each node
     }
-    let candidates = listConnections(currentNode); // obtain all children to current node
+    let candidates = main.workingData.filter(node => node.parentId === currentNode.id); // obtain all children to current node
     // cycle through all children
     for (candidate of candidates) {
       candidate.parent = currentNode; // add current node to child's parent list
