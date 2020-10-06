@@ -147,7 +147,7 @@ let main = {
       
       main.menu = true;
       main.currentGame = games[document.forms["startupMenu"]["selectedGame"].value];
-      ajax_fetch('https://raw.githubusercontent.com/mileswest07/tracker/json-attempt/js/' + main.currentGame + '/data.json', postFetch);
+      ajax_fetch('https://raw.githubusercontent.com/mileswest07/tracker/master/js/' + main.currentGame + '/data.json', postFetch);
     }
   }
   
