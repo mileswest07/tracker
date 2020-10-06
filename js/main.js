@@ -35,15 +35,39 @@ let main = {
     }
   }
   
+  // from https://code-maven.com/ajax-request-for-json-data
+  function ajax_fetch(url, callback) {
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.onreadystatechange = function() {
+      if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+        console.log('responseText:' + xmlhttp.responseText);
+          try {
+            var data = JSON.parse(xmlhttp.responseText);
+          } catch(err) {
+            console.log(err.message + " in " + xmlhttp.responseText);
+            return;
+          }
+        callback(data);
+      }
+    };
+ 
+    xmlhttp.open("GET", url, true);
+    xmlhttp.send();
+  }
+  
+  function postFetch(data) {
+    main.workingData = data;
+    
+    generate();
+  }
+  
   function generate() {
     if (main.menu) {
-      main.currentGame = games[document.forms["startupMenu"]["selectedGame"].value];
       main.goRandom = document.forms["startupMenu"]["isRandom"].checked;
       main.allowColors = document.forms["startupMenu"]["colorblind"].checked === false;
       main.advancedColors = document.forms["startupMenu"]["advancedColors"].checked;
       main.separateAreas = document.forms["startupMenu"]["separateAreas"].checked;
       
-      main.workingData = rawData; // TODO: load data dynamically
       main.mode = modes[0]; // TODO: make this an option
       
       let menuPointer = document.getElementById("mainMenu");
@@ -122,7 +146,8 @@ let main = {
       }
       
       main.menu = true;
-      generate();
+      main.currentGame = games[document.forms["startupMenu"]["selectedGame"].value];
+      ajax_fetch('https://raw.githubusercontent.com/mileswest07/tracker/master/js/' + main.currentGame + '/data.json', postFetch);
     }
   }
   
